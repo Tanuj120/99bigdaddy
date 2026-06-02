@@ -4,7 +4,7 @@ import homeController from '../controllers/homeController';
 import winGoController from '../controllers/winGoController';
 import userController from '../controllers/userController';
 import middlewareController from '../controllers/middlewareController';
-import adminController from '../controllers/adminController';
+import adminController from '../controllers/admin.js';
 import dailyController from '../controllers/dailyController';
 import k5Controller from '../controllers/k5Controller';
 import k3Controller from '../controllers/k3Controller';

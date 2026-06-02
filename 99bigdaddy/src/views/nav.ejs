@@ -51,3 +51,73 @@
         { id: 5, src: '/images/me2.png' },
     ];
 </script>
+<script>
+    // Runtime frontend adjustments requested by client:
+    // 1) Replace rupee symbol with dollar sign in text nodes
+    // 2) Change language label 'IND' to 'US' and show US flag emoji
+    // 3) Set default phone country code to +1 where applicable
+    // 4) Remove any signup popup element if present
+    document.addEventListener('DOMContentLoaded', function () {
+        // Replace rupee signs in text nodes
+        try {
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+            let node;
+            while (node = walker.nextNode()) {
+                if (node.nodeValue && node.nodeValue.indexOf('₹') !== -1) {
+                    node.nodeValue = node.nodeValue.replace(/₹/g, '$');
+                }
+            }
+        } catch (e) { /* ignore */ }
+
+        // Replace language label IND -> US and add emoji if not present
+        document.querySelectorAll('.lang-text').forEach(el => {
+            if (el.innerText && el.innerText.trim().toUpperCase() === 'IND') {
+                el.innerText = 'US';
+                // try to add emoji flag if no existing flag element
+                const parent = el.parentElement;
+                if (parent && !parent.querySelector('.lang-flag')) {
+                    const span = document.createElement('span');
+                    span.className = 'lang-flag';
+                    span.style.marginRight = '6px';
+                    span.innerText = '🇺🇸';
+                    parent.insertBefore(span, el);
+                }
+            }
+        });
+
+        // Set default phone code to +1 for dropdowns
+        document.querySelectorAll('.dropdown__value span').forEach(el => {
+            if (el.innerText && el.innerText.trim() === '+91') el.innerText = '+1';
+        });
+
+        // Remove signup popup element if present
+        const popup = document.getElementById('popup');
+        if (popup) popup.remove();
+        // Also hide any van-popup elements
+        document.querySelectorAll('.van-popup, .van-popup2, .popups').forEach(n => n.style.display = 'none');
+
+        // Observe DOM changes and replace any future rupee signs
+        const replaceRupeeInNode = (node) => {
+            if (!node) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (node.nodeValue && node.nodeValue.indexOf('₹') !== -1) node.nodeValue = node.nodeValue.replace(/₹/g, '$');
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                node.querySelectorAll('*').forEach(el => {
+                    if (el.childNodes && el.childNodes.length) {
+                        el.childNodes.forEach(ch => { if (ch.nodeType === Node.TEXT_NODE && ch.nodeValue && ch.nodeValue.indexOf('₹') !== -1) ch.nodeValue = ch.nodeValue.replace(/₹/g, '$'); });
+                    }
+                });
+            }
+        };
+
+        const mo = new MutationObserver((mutations) => {
+            mutations.forEach(m => {
+                if (m.addedNodes && m.addedNodes.length) {
+                    m.addedNodes.forEach(n => replaceRupeeInNode(n));
+                }
+                if (m.type === 'characterData' && m.target) replaceRupeeInNode(m.target);
+            });
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+    });
+</script>

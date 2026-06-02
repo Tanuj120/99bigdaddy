@@ -3,12 +3,12 @@
 
 <head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="shortcut icon" href="/images/logo.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/images/drakon-mark.svg" type="image/x-icon">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="google" content="notranslate">
     <meta name="robots" content="noindex,nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>99 Big Daddy</title>
+    <title>Drakon</title>
     <link rel="stylesheet" href="./index_files/index-96409872.css">
     <link rel="stylesheet" href="./index_files/modules-96c1e775.css">
     <link rel="stylesheet" href="./index_files/page-activity-d48e62db.css">
@@ -111,7 +111,7 @@
                                 data-v-58c5e826="" class="van-badge__wrapper van-icon van-icon-arrow-left"></i></div>
 
                         <div data-v-58c5e826="" class="navbar__content-center">
-                            <div data-v-58c5e826="" class="headLogo" style="background-image: url(/images/logo.jpg);">
+                            <div data-v-58c5e826="" class="headLogo" style="background-image: url(/images/drakon-logo.svg);">
                             </div>
                             <div data-v-58c5e826="" class="navbar__content-title"></div>
                         </div>
@@ -119,9 +119,9 @@
                             <div data-v-187d09fa="" data-v-7e82aefe="">
                                 <div data-v-187d09fa="" class="right">
                                     <div data-v-187d09fa="" class="img"><img data-v-187d09fa="" class=""
-                                            data-origin="https://www.bigdaddygame2.com/assets/png/en-4b649537.png"
-                                            src="./index_files/en-4b649537.png"></div><span data-v-187d09fa=""
-                                        class="lang-text">IND</span>
+                                            data-origin="/images/usFlag.svg"
+                                            src="/images/usFlag.svg"></div><span data-v-187d09fa=""
+                                        class="lang-text">US</span>
                                 </div>
                             </div>
                         </div>
@@ -150,7 +150,7 @@
                             <div data-v-93f53084="" class="phoneInput__container-input">
                                 <div data-v-6f85c91a="" data-v-93f53084="" class="dropdown">
                                     <div data-v-6f85c91a="" class="dropdown__value"><span
-                                            data-v-6f85c91a="">+91</span><i data-v-6f85c91a=""
+                                            data-v-6f85c91a="">+1</span><i data-v-6f85c91a=""
                                             class="van-badge__wrapper van-icon van-icon-arrow-down"></i></div>
                                     <div data-v-6f85c91a="" class="dropdown__list">
                                         <div data-v-6f85c91a="" class="dropdown__list-item"><span
@@ -326,7 +326,7 @@
                         </g>
                     </svg>
                 </span>
-                <img src="/images/logo.jpg"
+                <img src="/images/drakon-logo.svg"
                     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 168px; height: 44px;">
             </div>
         </div>
@@ -345,6 +345,7 @@
         });
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="/js/countryPhone.js"></script>
     <script>
         let i = 1;
         $('.van-checkbox').click(function (e) {
@@ -456,7 +457,7 @@
 
         $('#submit').click(async (e) => {
             e.preventDefault();
-            let username = $('#username').val().trim();
+            let username = window.buildInternationalPhone($('#username').val().trim());
             // let otp = $('#otp').val().trim();
             let password = $('#password').val().trim();
             let invite = $('#invite').val().trim();

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Drakon mark">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe8a3"/>
+      <stop offset="45%" stop-color="#f7c857"/>
+      <stop offset="100%" stop-color="#c98e1f"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#16110b"/>
+  <path d="M24 21h39c24 0 42 5 54 16-7 0-15 3-23 10 4 5 7 11 7 18 0 24-18 42-47 42H24zm25 23v42h11c17 0 27-8 27-21s-10-21-27-21z" fill="url(#gold)"/>
+  <path d="M83 34c8 2 17 8 21 15-7-1-15 1-21 7z" fill="#fff1bf" opacity=".75"/>
+</svg>

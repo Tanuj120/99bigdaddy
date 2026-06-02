@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 190" role="img" aria-label="Drakon logo">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe8a3"/>
+      <stop offset="45%" stop-color="#f7c857"/>
+      <stop offset="100%" stop-color="#c98e1f"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+  <rect width="720" height="190" fill="none"/>
+  <g filter="url(#shadow)">
+    <path d="M51 24h182l-22 22H73v98h138l22 22H51z" fill="url(#gold)"/>
+    <path d="M80 54h88c28 0 46 14 46 36 0 18-12 30-31 34l39 34h-38l-36-31h-33v31H80zm35 27v19h50c10 0 16-3 16-10s-6-9-16-9z" fill="#1b1308"/>
+    <path d="M268 54h35v104h-35z" fill="url(#gold)"/>
+    <path d="M321 54h64c42 0 69 20 69 52s-27 52-69 52h-64zm35 27v50h25c22 0 38-9 38-25s-16-25-38-25z" fill="url(#gold)"/>
+    <path d="M465 158l51-104h39l51 104h-37l-9-20h-51l-9 20zm55-45h28l-14-31z" fill="url(#gold)"/>
+    <path d="M619 54h37l48 58V54h35v104h-37l-48-58v58h-35z" fill="url(#gold)"/>
+    <text x="86" y="121" font-family="Arial Black, Impact, sans-serif" font-size="62" font-weight="900" letter-spacing="4" fill="url(#gold)">DRAKON</text>
+  </g>
+</svg>

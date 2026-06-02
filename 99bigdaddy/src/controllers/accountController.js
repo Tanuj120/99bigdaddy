@@ -30,6 +30,12 @@ const isNumber = (params) => {
     return pattern.test(params);
 }
 
+const cleanPhoneNumber = (phone) => String(phone || '').replace(/\D/g, '');
+
+const isInternationalPhoneNumber = (phone) => {
+    return /^[1-9]\d{7,18}$/.test(phone);
+}
+
 const ipAddress = (req) => {
     let ip = '';
     if (req.headers['x-forwarded-for']) {
@@ -62,6 +68,7 @@ const forgotPage = async (req, res) => {
 
 const login = async (req, res) => {
     let { username, pwd } = req.body;
+    username = cleanPhoneNumber(username);
 
     if (!username || !pwd || !username) {//!isNumber(username)
         return res.status(200).json({
@@ -78,12 +85,18 @@ const login = async (req, res) => {
                     user: { ...others },
                     timeNow: timeNow
                 }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
-                await connection.execute('UPDATE `users` SET `token` = ? WHERE `phone` = ? ', [md5(accessToken), username]);
+                const authToken = md5(accessToken);
+                await connection.execute('UPDATE `users` SET `token` = ? WHERE `phone` = ? ', [authToken, username]);
+                const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
+                res.setHeader('Set-Cookie', [
+                    `token=${encodeURIComponent(accessToken)}; Expires=${expiresAt}; Max-Age=86400; Path=/; SameSite=Lax`,
+                    `auth=${authToken}; Expires=${expiresAt}; Max-Age=86400; Path=/; SameSite=Lax`
+                ]);
                 return res.status(200).json({
                     message: 'Login Successfully!',
                     status: true,
                     token: accessToken,
-                    value: md5(accessToken)
+                    value: authToken
                 });
             } else {
                 return res.status(200).json({
@@ -106,6 +119,7 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     let now = new Date().getTime();
     let { username, pwd, invitecode } = req.body;
+    username = cleanPhoneNumber(username);
     let id_user = randomNumber(10000, 99999);
     let otp2 = randomNumber(100000, 999999);
     let name_user = "Member" + randomNumber(10000, 99999);
@@ -120,7 +134,7 @@ const register = async (req, res) => {
         });
     }
 
-    if (username.length < 9 || username.length > 10 || !isNumber(username)) {
+    if (!isInternationalPhoneNumber(username)) {
         return res.status(200).json({
             message: 'phone error',
             status: false
@@ -190,12 +204,12 @@ const register = async (req, res) => {
 }
 
 const verifyCode = async (req, res) => {
-    let phone = req.body.phone;
+    let phone = cleanPhoneNumber(req.body.phone);
     let now = new Date().getTime();
     let timeEnd = (+new Date) + 1000 * (60 * 2 + 0) + 500;
     let otp = randomNumber(100000, 999999);
 
-    if (phone.length < 9 || phone.length > 10 || !isNumber(phone)) {
+    if (!isInternationalPhoneNumber(phone)) {
         return res.status(200).json({
             message: 'phone error',
             status: false
@@ -204,7 +218,7 @@ const verifyCode = async (req, res) => {
 
     const [rows] = await connection.query('SELECT * FROM users WHERE `phone` = ?', [phone]);
     if (rows.length == 0) {
-        await request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=84${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
+        await request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
             let data = JSON.parse(body);
             if (data.code == '00000') {
                 await connection.execute("INSERT INTO users SET phone = ?, otp = ?, veri = 0, time_otp = ? ", [phone, otp, timeEnd]);
@@ -219,7 +233,7 @@ const verifyCode = async (req, res) => {
     } else {
         let user = rows[0];
         if (user.time_otp - now <= 0) {
-            request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=84${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
+            request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
                 let data = JSON.parse(body);
                 if (data.code == '00000') {
                     await connection.execute("UPDATE users SET otp = ?, time_otp = ? WHERE phone = ? ", [otp, timeEnd, phone]);
@@ -243,12 +257,12 @@ const verifyCode = async (req, res) => {
 }
 
 const verifyCodePass = async (req, res) => {
-    let phone = req.body.phone;
+    let phone = cleanPhoneNumber(req.body.phone);
     let now = new Date().getTime();
     let timeEnd = (+new Date) + 1000 * (60 * 2 + 0) + 500;
     let otp = randomNumber(100000, 999999);
 
-    if (phone.length < 9 || phone.length > 10 || !isNumber(phone)) {
+    if (!isInternationalPhoneNumber(phone)) {
         return res.status(200).json({
             message: 'phone error',
             status: false
@@ -265,7 +279,7 @@ const verifyCodePass = async (req, res) => {
     } else {
         let user = rows[0];
         if (user.time_otp - now <= 0) {
-            request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=84${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
+            request(`http://47.243.168.18:9090/sms/batch/v2?appkey=NFJKdK&appsecret=brwkTw&phone=${phone}&msg=Your verification code is ${otp}&extend=${now}`, async (error, response, body) => {
                 let data = JSON.parse(body);
                 if (data.code == '00000') {
                     await connection.execute("UPDATE users SET otp = ?, time_otp = ? WHERE phone = ? ", [otp, timeEnd, phone]);
@@ -289,14 +303,14 @@ const verifyCodePass = async (req, res) => {
 }
 
 const forGotPassword = async (req, res) => {
-    let username = req.body.username;
+    let username = cleanPhoneNumber(req.body.username);
     let otp = req.body.otp;
     let pwd = req.body.pwd;
     let now = new Date().getTime();
     let timeEnd = (+new Date) + 1000 * (60 * 2 + 0) + 500;
     let otp2 = randomNumber(100000, 999999);
 
-    if (username.length < 9 || username.length > 10 || !isNumber(username)) {
+    if (!isInternationalPhoneNumber(username)) {
         return res.status(200).json({
             message: 'phone error',
             status: false

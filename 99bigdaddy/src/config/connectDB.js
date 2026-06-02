@@ -1,5 +1,6 @@
 //const mysql = require('mysql2/promise');
-import mysql from 'mysql2/promise';
+import mysql from "mysql2/promise";
+import md5 from "md5";
 
 // const connection = mysql.createPool({
 //     host: 'localhost',
@@ -8,35 +9,315 @@ import mysql from 'mysql2/promise';
 //     database: 'lawra',
 // });
 const dbConfig = {
-    host: process.env.DB_HOST || process.env.DATABASE_HOST || 'localhost',
-    user: process.env.DB_USER || process.env.DATABASE_USER || '',
-    password: process.env.DB_PASSWORD || process.env.DATABASE_PASSWORD || '',
-    database: process.env.DB_NAME || process.env.DATABASE_NAME || '',
-    port: Number(process.env.DB_PORT || 3306),
-    waitForConnections: true,
-    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
-    queueLimit: 0,
+  host: process.env.DB_HOST || process.env.DATABASE_HOST || "localhost",
+  user: process.env.DB_USER || process.env.DATABASE_USER || "",
+  password: process.env.DB_PASSWORD || process.env.DATABASE_PASSWORD || "",
+  database: process.env.DB_NAME || process.env.DATABASE_NAME || "",
+  port: Number(process.env.DB_PORT || 3306),
+  waitForConnections: true,
+  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
+  queueLimit: 0,
 };
 
-const connection = mysql.createPool(dbConfig);
+const _SKIP_DB = (process.env.SKIP_DB || "").toString().trim().toLowerCase();
+console.log("[debug] connectDB SKIP_DB=", _SKIP_DB, "DB_USER=", dbConfig.user);
 
-async function testConnection() {
-    try {
-        // #region agent log
-        fetch('http://127.0.0.1:7649/ingest/72535e89-2a7a-4c39-982e-04a2064b08bf',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'109959'},body:JSON.stringify({sessionId:'109959',runId:process.env.VERCEL?'vercel-runtime':'local-runtime',hypothesisId:'H5',location:'src/config/connectDB.js:30',message:'Testing database connectivity',data:{isVercel:!!process.env.VERCEL,hasHost:!!dbConfig.host,hasUser:!!dbConfig.user,hasDatabase:!!dbConfig.database,port:dbConfig.port},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
-        const [rows, fields] = await connection.query('SELECT 1 + 1 AS solution');
-        console.log('Database connection successful. Test query result:', rows[0].solution); // Should log: 2
-    } catch (error) {
-        // #region agent log
-        fetch('http://127.0.0.1:7649/ingest/72535e89-2a7a-4c39-982e-04a2064b08bf',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'109959'},body:JSON.stringify({sessionId:'109959',runId:process.env.VERCEL?'vercel-runtime':'local-runtime',hypothesisId:'H5',location:'src/config/connectDB.js:36',message:'Database connection failed',data:{isVercel:!!process.env.VERCEL,errorCode:error?.code||null,errorMessage:error?.message||null},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
-        console.error('Error connecting to the database:', error);
+const clone = (value) => JSON.parse(JSON.stringify(value));
+const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
+const phoneMatches = (storedPhone, inputPhone) => {
+  const stored = normalizePhone(storedPhone);
+  const input = normalizePhone(inputPhone);
+  return stored === input || input.endsWith(stored) || stored.endsWith(input);
+};
+
+const pickFields = (row, sql) => {
+  if (!row) return row;
+  const match = sql.match(/select\s+(.+?)\s+from\s+/i);
+  if (!match) return clone(row);
+  const fields = match[1].trim();
+  if (fields === "*") return clone(row);
+
+  return fields
+    .split(",")
+    .map((field) => field.replace(/[`"' ]/g, "").trim())
+    .filter(Boolean)
+    .reduce((result, field) => {
+      result[field] = row[field];
+      return result;
+    }, {});
+};
+
+const createMockConnection = () => {
+  const seededPhone = "8972182034";
+  const seededPassword = "qwert";
+  const users = [
+    {
+      id: 1,
+      id_user: "89721",
+      phone: seededPhone,
+      name_user: "Member89721",
+      password: md5(seededPassword),
+      plain_password: seededPassword,
+      money: 1000,
+      total_money: 1000,
+      code: "LOCAL89721",
+      invite: "BOOTSTRAP01",
+      ctv: "",
+      veri: 1,
+      otp: "123456",
+      ip_address: "127.0.0.1",
+      status: 1,
+      time: Date.now(),
+      token: "",
+      level: 0,
+      user_level: 0,
+      free_bonus: 500,
+      first_deposit: 0,
+      roses_f: 0,
+      roses_f1: 0,
+      roses_today: 0,
+      recharge: 0,
+    },
+  ];
+  const pointLists = [
+    {
+      phone: seededPhone,
+      money: 0,
+      money_us: 0,
+      telegram: "",
+    },
+  ];
+  const adminRows = [
+    {
+      id: 1,
+      app: "Drakon",
+      telegram: "",
+      cskh: "",
+    },
+  ];
+
+  const selectUsers = (sql, params = []) => {
+    let rows = users;
+    if (/where\s+phone\s*=\s*\?\s+and\s+password\s*=\s*\?/i.test(sql)) {
+      const [phone, password] = params;
+      rows = users.filter(
+        (user) => phoneMatches(user.phone, phone) && user.password === password,
+      );
+    } else if (/where\s+token\s*=\s*\?\s+and\s+password\s*=\s*\?/i.test(sql)) {
+      const [token, password] = params;
+      rows = users.filter((user) => user.token === token && user.password === password);
+    } else if (/where\s+phone\s*=\s*\?/i.test(sql)) {
+      const [phone] = params;
+      rows = users.filter((user) => phoneMatches(user.phone, phone));
+    } else if (/where\s+token\s*=\s*\?/i.test(sql)) {
+      const [token] = params;
+      rows = users.filter((user) => user.token === token);
+    } else if (/where\s+code\s*=\s*\?/i.test(sql)) {
+      const [code] = params;
+      rows = users.filter((user) => user.code === code);
+    } else if (/where\s+invite\s*=\s*\?/i.test(sql)) {
+      const [invite] = params;
+      rows = users.filter((user) => user.invite === invite);
+    } else if (/where\s+ip_address\s*=\s*\?/i.test(sql)) {
+      const [ip] = params;
+      rows = users.filter((user) => user.ip_address === ip);
     }
+    return rows.map((row) => pickFields(row, sql));
+  };
+
+  const selectPointList = (sql, params = []) => {
+    let rows = pointLists;
+    if (/where\s+phone\s*=\s*\?/i.test(sql)) {
+      const [phone] = params;
+      rows = pointLists.filter((row) => phoneMatches(row.phone, phone));
+    }
+    return rows.map((row) => pickFields(row, sql));
+  };
+
+  const updateUsers = (sql, params = []) => {
+    if (/set\s+`?token`?\s*=\s*\?\s+where\s+`?phone`?\s*=\s*\?/i.test(sql)) {
+      const [token, phone] = params;
+      const user = users.find((entry) => phoneMatches(entry.phone, phone));
+      if (user) user.token = token;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    if (/set\s+name_user\s*=\s*\?\s+where\s+`?token`?\s*=\s*\?/i.test(sql)) {
+      const [nameUser, token] = params;
+      const user = users.find((entry) => entry.token === token);
+      if (user) user.name_user = nameUser;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    if (/set\s+otp\s*=\s*\?,\s*password\s*=\s*\?\s+where\s+`?token`?\s*=\s*\?/i.test(sql)) {
+      const [otp, password, token] = params;
+      const user = users.find((entry) => entry.token === token);
+      if (user) {
+        user.otp = otp;
+        user.password = password;
+      }
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    return [{ affectedRows: 0 }, []];
+  };
+
+  const insertUsers = (params = []) => {
+    const [
+      id_user,
+      phone,
+      name_user,
+      password,
+      plain_password,
+      money,
+      code,
+      invite,
+      ctv,
+      veri,
+      otp,
+      ip_address,
+      status,
+      time,
+      free_bonus,
+      first_deposit,
+    ] = params;
+
+    users.push({
+      id: users.length + 1,
+      id_user,
+      phone,
+      name_user,
+      password,
+      plain_password,
+      money,
+      total_money: money,
+      code,
+      invite,
+      ctv,
+      veri,
+      otp,
+      ip_address,
+      status,
+      time,
+      token: "",
+      level: 0,
+      user_level: 0,
+      free_bonus,
+      first_deposit,
+      roses_f: 0,
+      roses_f1: 0,
+      roses_today: 0,
+      recharge: 0,
+    });
+
+    return [{ affectedRows: 1, insertId: users.length }, []];
+  };
+
+  const insertPointList = (params = []) => {
+    const [phone] = params;
+    if (!pointLists.some((row) => row.phone === phone)) {
+      pointLists.push({ phone, money: 0, money_us: 0, telegram: "" });
+    }
+    return [{ affectedRows: 1, insertId: pointLists.length }, []];
+  };
+
+  const runMockQuery = async (sql, params = []) => {
+    if (/select\s+1\s*\+\s*1\s+as\s+solution/i.test(sql)) {
+      return [[{ solution: 2 }], []];
+    }
+    if (/^\s*select/i.test(sql) && /from\s+users/i.test(sql)) {
+      return [selectUsers(sql, params), []];
+    }
+    if (/^\s*select/i.test(sql) && /from\s+point_list/i.test(sql)) {
+      return [selectPointList(sql, params), []];
+    }
+    if (/^\s*select/i.test(sql) && /from\s+admin/i.test(sql)) {
+      return [adminRows.map((row) => pickFields(row, sql)), []];
+    }
+    if (/^\s*update\s+`?users`?/i.test(sql)) {
+      return updateUsers(sql, params);
+    }
+    if (/^\s*insert\s+into\s+users/i.test(sql)) {
+      return insertUsers(params);
+    }
+    if (/^\s*insert\s+into\s+point_list/i.test(sql)) {
+      return insertPointList(params);
+    }
+    return [[], []];
+  };
+
+  return {
+    query: async (sql, params = []) => runMockQuery(sql, params),
+    execute: async (sql, params = []) => runMockQuery(sql, params),
+    getConnection: async () => ({ release: () => {} }),
+    end: async () => {},
+  };
+};
+
+let connection;
+if (_SKIP_DB === "true") {
+  console.warn(
+    "[dev] SKIP_DB is true - using mock DB connection (no MySQL operations will run)",
+  );
+  connection = createMockConnection();
+} else {
+  connection = mysql.createPool(dbConfig);
 }
 
-if (!process.env.VERCEL) {
-    testConnection();
+async function testConnection() {
+  try {
+    fetch("http://127.0.0.1:7649/ingest/72535e89-2a7a-4c39-982e-04a2064b08bf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "109959",
+      },
+      body: JSON.stringify({
+        sessionId: "109959",
+        runId: process.env.VERCEL ? "vercel-runtime" : "local-runtime",
+        hypothesisId: "H5",
+        location: "src/config/connectDB.js:30",
+        message: "Testing database connectivity",
+        data: {
+          isVercel: !!process.env.VERCEL,
+          hasHost: !!dbConfig.host,
+          hasUser: !!dbConfig.user,
+          hasDatabase: !!dbConfig.database,
+          port: dbConfig.port,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+
+    const [rows] = await connection.query("SELECT 1 + 1 AS solution");
+    console.log(
+      "Database connection successful. Test query result:",
+      rows[0].solution,
+    );
+  } catch (error) {
+    fetch("http://127.0.0.1:7649/ingest/72535e89-2a7a-4c39-982e-04a2064b08bf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "109959",
+      },
+      body: JSON.stringify({
+        sessionId: "109959",
+        runId: process.env.VERCEL ? "vercel-runtime" : "local-runtime",
+        hypothesisId: "H5",
+        location: "src/config/connectDB.js:36",
+        message: "Database connection failed",
+        data: {
+          isVercel: !!process.env.VERCEL,
+          errorCode: error?.code || null,
+          errorMessage: error?.message || null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    console.error("Error connecting to the database:", error);
+  }
+}
+
+if (!process.env.VERCEL && _SKIP_DB !== "true") {
+  testConnection();
 }
 
 export default connection;
