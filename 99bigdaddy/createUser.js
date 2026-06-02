@@ -4,6 +4,8 @@ import md5 from 'md5';
 
 const PHONE = '8972182034';
 const PLAIN_PASSWORD = 'qwert';
+const BOOTSTRAP_CODE = 'BOOTSTRAP01';
+const BOOTSTRAP_PHONE = '1000000001';
 
 function randomNumber(min, max) {
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
@@ -35,9 +37,7 @@ function getDbConfig() {
     process.env.MYSQLDATABASE ||
     process.env.DB_NAME ||
     process.env.DATABASE_NAME;
-  const port = Number(
-    process.env.MYSQLPORT || process.env.DB_PORT || 3306
-  );
+  const port = Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306);
 
   if (!host || !user || !database) {
     throw new Error(
@@ -48,39 +48,139 @@ function getDbConfig() {
   return { host, user, password, database, port };
 }
 
-async function getInviteCode(connection) {
-  const [rows] = await connection.query(
-    'SELECT code FROM users WHERE code IS NOT NULL AND code != ? LIMIT 1',
-    ['']
-  );
-  if (rows.length > 0) {
-    return rows[0].code;
+async function getColumns(connection, tableName) {
+  const [rows] = await connection.query(`SHOW COLUMNS FROM \`${tableName}\``);
+  return new Set(rows.map((row) => row.Field));
+}
+
+function pickExisting(columns, values) {
+  return Object.entries(values).filter(([key, value]) => columns.has(key) && value !== undefined);
+}
+
+async function insertRow(connection, tableName, columns, values) {
+  const entries = pickExisting(columns, values);
+  if (entries.length === 0) {
+    throw new Error(`No matching columns found for insert into ${tableName}`);
   }
 
-  const bootstrapCode = 'BOOTSTRAP01';
-  const now = Date.now();
+  const fields = entries.map(([key]) => `\`${key}\``).join(', ');
+  const placeholders = entries.map(() => '?').join(', ');
+  const params = entries.map(([, value]) => value);
+
   await connection.execute(
-    `INSERT INTO users SET
-      id_user = ?, phone = ?, name_user = ?, password = ?, plain_password = ?,
-      money = ?, code = ?, invite = ?, veri = ?, status = ?, time = ?`,
-    [
-      randomNumber(10000, 99999),
-      '1000000001',
-      'Admin',
-      md5('admin123'),
-      'admin123',
-      0,
-      bootstrapCode,
-      bootstrapCode,
-      1,
-      1,
-      now,
-    ]
+    `INSERT INTO \`${tableName}\` (${fields}) VALUES (${placeholders})`,
+    params
   );
-  await connection.execute('INSERT INTO point_list SET phone = ?', [
-    '1000000001',
-  ]);
-  return bootstrapCode;
+}
+
+async function updateRow(connection, tableName, columns, values, whereSql, whereParams) {
+  const entries = pickExisting(columns, values);
+  if (entries.length === 0) {
+    return;
+  }
+
+  const assignments = entries.map(([key]) => `\`${key}\` = ?`).join(', ');
+  const params = entries.map(([, value]) => value);
+
+  await connection.execute(
+    `UPDATE \`${tableName}\` SET ${assignments} WHERE ${whereSql}`,
+    [...params, ...whereParams]
+  );
+}
+
+async function ensurePointListRow(connection, pointListColumns, phone) {
+  const [rows] = await connection.query('SELECT phone FROM point_list WHERE phone = ? LIMIT 1', [phone]);
+  if (rows.length > 0) {
+    return;
+  }
+
+  await insertRow(connection, 'point_list', pointListColumns, {
+    phone,
+    money: 0,
+    money_us: 0,
+    telegram: '',
+  });
+}
+
+async function ensureBootstrapReferrer(connection, userColumns, pointListColumns) {
+  const [existingByCode] = await connection.query(
+    'SELECT * FROM users WHERE code = ? LIMIT 1',
+    [BOOTSTRAP_CODE]
+  );
+
+  if (existingByCode.length > 0) {
+    await updateRow(
+      connection,
+      'users',
+      userColumns,
+      {
+        phone: BOOTSTRAP_PHONE,
+        name_user: 'Admin',
+        password: md5('admin123'),
+        plain_password: 'admin123',
+        money: 0,
+        total_money: 0,
+        invite: BOOTSTRAP_CODE,
+        veri: 1,
+        status: 1,
+        time: Date.now(),
+      },
+      '`code` = ?',
+      [BOOTSTRAP_CODE]
+    );
+    await ensurePointListRow(connection, pointListColumns, BOOTSTRAP_PHONE);
+    return BOOTSTRAP_CODE;
+  }
+
+  const [existingByPhone] = await connection.query(
+    'SELECT * FROM users WHERE phone = ? LIMIT 1',
+    [BOOTSTRAP_PHONE]
+  );
+
+  if (existingByPhone.length > 0) {
+    await updateRow(
+      connection,
+      'users',
+      userColumns,
+      {
+        code: BOOTSTRAP_CODE,
+        invite: BOOTSTRAP_CODE,
+        name_user: 'Admin',
+        password: md5('admin123'),
+        plain_password: 'admin123',
+        veri: 1,
+        status: 1,
+      },
+      '`phone` = ?',
+      [BOOTSTRAP_PHONE]
+    );
+    await ensurePointListRow(connection, pointListColumns, BOOTSTRAP_PHONE);
+    return BOOTSTRAP_CODE;
+  }
+
+  await insertRow(connection, 'users', userColumns, {
+    id_user: randomNumber(10000, 99999),
+    phone: BOOTSTRAP_PHONE,
+    name_user: 'Admin',
+    password: md5('admin123'),
+    plain_password: 'admin123',
+    money: 0,
+    total_money: 0,
+    code: BOOTSTRAP_CODE,
+    invite: BOOTSTRAP_CODE,
+    ctv: '',
+    veri: 1,
+    otp: randomNumber(100000, 999999),
+    ip_address: '127.0.0.1',
+    status: 1,
+    time: Date.now(),
+    free_bonus: 0,
+    first_deposit: 0,
+    level: 0,
+    user_level: 0,
+  });
+  await ensurePointListRow(connection, pointListColumns, BOOTSTRAP_PHONE);
+  return BOOTSTRAP_CODE;
 }
 
 async function main() {
@@ -88,66 +188,76 @@ async function main() {
   const connection = await mysql.createConnection(db);
 
   try {
-    const [existing] = await connection.query(
-      'SELECT id, phone FROM users WHERE phone = ?',
-      [PHONE]
-    );
+    const userColumns = await getColumns(connection, 'users');
+    const pointListColumns = await getColumns(connection, 'point_list');
 
-    if (existing.length > 0) {
-      await connection.execute(
-        'UPDATE users SET password = ?, plain_password = ?, veri = 1, status = 1 WHERE phone = ?',
-        [md5(PLAIN_PASSWORD), PLAIN_PASSWORD, PHONE]
-      );
-      console.log(`User ${PHONE} already exists. Password updated.`);
-      return;
-    }
+    const invitecode = await ensureBootstrapReferrer(connection, userColumns, pointListColumns);
 
-    const invitecode = await getInviteCode(connection);
     const [referrer] = await connection.query(
-      'SELECT phone, level, ctv FROM users WHERE code = ? LIMIT 1',
+      'SELECT * FROM users WHERE code = ? LIMIT 1',
       [invitecode]
     );
 
     if (referrer.length === 0) {
-      throw new Error(`Referrer code not found: ${invitecode}`);
+      throw new Error(`Referrer code not found after bootstrap: ${invitecode}`);
     }
 
-    const id_user = randomNumber(10000, 99999);
-    const name_user = `Member${randomNumber(10000, 99999)}`;
+    const [existing] = await connection.query(
+      'SELECT id, phone FROM users WHERE phone = ? LIMIT 1',
+      [PHONE]
+    );
+
+    if (existing.length > 0) {
+      await updateRow(
+        connection,
+        'users',
+        userColumns,
+        {
+          password: md5(PLAIN_PASSWORD),
+          plain_password: PLAIN_PASSWORD,
+          veri: 1,
+          status: 1,
+          invite: invitecode,
+        },
+        '`phone` = ?',
+        [PHONE]
+      );
+      await ensurePointListRow(connection, pointListColumns, PHONE);
+      console.log('User already existed. Seed credentials refreshed.');
+      console.log({ phone: PHONE, password: PLAIN_PASSWORD, invite: invitecode });
+      return;
+    }
+
+    const referrerRow = referrer[0];
     const code = randomString(5) + randomNumber(10000, 99999);
-    const time = Date.now();
-    let ctv = '';
-    if (referrer[0].level === 2) {
-      ctv = referrer[0].phone;
-    } else {
-      ctv = referrer[0].ctv || '';
-    }
+    const ctv =
+      Number(referrerRow.level || 0) === 2
+        ? referrerRow.phone || ''
+        : referrerRow.ctv || '';
 
-    const sql = `INSERT INTO users SET
-      id_user = ?, phone = ?, name_user = ?, password = ?, plain_password = ?,
-      money = ?, code = ?, invite = ?, ctv = ?, veri = ?, otp = ?, ip_address = ?,
-      status = ?, time = ?, free_bonus = ?, first_deposit = ?`;
-
-    await connection.execute(sql, [
-      id_user,
-      PHONE,
-      name_user,
-      md5(PLAIN_PASSWORD),
-      PLAIN_PASSWORD,
-      0,
+    await insertRow(connection, 'users', userColumns, {
+      id_user: randomNumber(10000, 99999),
+      phone: PHONE,
+      name_user: `Member${randomNumber(10000, 99999)}`,
+      password: md5(PLAIN_PASSWORD),
+      plain_password: PLAIN_PASSWORD,
+      money: 0,
+      total_money: 0,
       code,
-      invitecode,
+      invite: invitecode,
       ctv,
-      1,
-      randomNumber(100000, 999999),
-      '127.0.0.1',
-      1,
-      time,
-      500,
-      0,
-    ]);
+      veri: 1,
+      otp: randomNumber(100000, 999999),
+      ip_address: '127.0.0.1',
+      status: 1,
+      time: Date.now(),
+      free_bonus: 500,
+      first_deposit: 0,
+      level: 0,
+      user_level: 0,
+    });
 
-    await connection.execute('INSERT INTO point_list SET phone = ?', [PHONE]);
+    await ensurePointListRow(connection, pointListColumns, PHONE);
 
     console.log('User created successfully.');
     console.log({ phone: PHONE, password: PLAIN_PASSWORD, invite: invitecode, code });

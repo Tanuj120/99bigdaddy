@@ -490,6 +490,10 @@
                             $('.van-overlay').fadeOut(300);
                             alertMess(response.message);
                         }
+                    },
+                    error: function () {
+                        $('.van-overlay').fadeOut(300);
+                        alertMess('Registration failed. Please try again.');
                     }
                 });
             }

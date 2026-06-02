@@ -36,6 +36,75 @@ const isInternationalPhoneNumber = (phone) => {
     return /^[1-9]\d{7,18}$/.test(phone);
 }
 
+const getLastTenDigits = (phone) => {
+    const digits = cleanPhoneNumber(phone);
+    return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
+const findUserByPhoneAndPassword = async (phone, passwordHash) => {
+    const [exactRows] = await connection.query(
+        'SELECT * FROM users WHERE phone = ? AND password = ? ',
+        [phone, passwordHash]
+    );
+
+    if (exactRows.length > 0) {
+        return exactRows;
+    }
+
+    const lastTenDigits = getLastTenDigits(phone);
+    if (!lastTenDigits || lastTenDigits === phone) {
+        return exactRows;
+    }
+
+    const [fallbackRows] = await connection.query(
+        'SELECT * FROM users WHERE phone = ? AND password = ? ',
+        [lastTenDigits, passwordHash]
+    );
+
+    return fallbackRows;
+}
+
+const insertRegisteredUser = async ({
+    id_user,
+    username,
+    name_user,
+    pwd,
+    code,
+    invitecode,
+    ctv,
+    otp2,
+    ip,
+    time
+}) => {
+    const insertAttempts = [
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
+            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0]
+        },
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, 1, otp2, ip, 1, time]
+        },
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time]
+        }
+    ];
+
+    let lastError;
+
+    for (const attempt of insertAttempts) {
+        try {
+            await connection.execute(attempt.sql, attempt.params);
+            return;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw lastError;
+}
+
 const ipAddress = (req) => {
     let ip = '';
     if (req.headers['x-forwarded-for']) {
@@ -77,7 +146,7 @@ const login = async (req, res) => {
     }
 
     try {
-        const [rows] = await connection.query('SELECT * FROM users WHERE phone = ? AND password = ? ', [username, md5(pwd)]);
+        const rows = await findUserByPhoneAndPassword(username, md5(pwd));
         if (rows.length == 1) {
             if (rows[0].status == 1) {
                 const { password, money, ip, veri, ip_address, status, time, ...others } = rows[0];
@@ -86,7 +155,7 @@ const login = async (req, res) => {
                     timeNow: timeNow
                 }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
                 const authToken = md5(accessToken);
-                await connection.execute('UPDATE `users` SET `token` = ? WHERE `phone` = ? ', [authToken, username]);
+                await connection.execute('UPDATE `users` SET `token` = ? WHERE `phone` = ? ', [authToken, rows[0].phone]);
                 const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
                 res.setHeader('Set-Cookie', [
                     `token=${encodeURIComponent(accessToken)}; Expires=${expiresAt}; Max-Age=86400; Path=/; SameSite=Lax`,
@@ -112,6 +181,10 @@ const login = async (req, res) => {
         }
     } catch (error) {
         if (error) console.log(error);
+        return res.status(200).json({
+            message: 'Login failed. Please try again.',
+            status: false
+        });
     }
 
 }
@@ -160,8 +233,18 @@ const register = async (req, res) => {
                 } else {
                     ctv = check_i[0].ctv;
                 }
-                const sql = "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?";
-                await connection.execute(sql, [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0]);
+                await insertRegisteredUser({
+                    id_user,
+                    username,
+                    name_user,
+                    pwd,
+                    code,
+                    invitecode,
+                    ctv,
+                    otp2,
+                    ip,
+                    time
+                });
                 await connection.execute('INSERT INTO point_list SET phone = ?', [username]);
 
                 let [check_code] = await connection.query('SELECT * FROM users WHERE invite = ? ', [invitecode]);
@@ -199,6 +282,10 @@ const register = async (req, res) => {
         }
     } catch (error) {
         if (error) console.log(error);
+        return res.status(200).json({
+            message: error?.message || 'Registration failed',
+            status: false
+        });
     }
 
 }
