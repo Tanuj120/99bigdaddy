@@ -104,7 +104,27 @@ app.use((req, res, next) => {
   const _send = res.send;
   res.send = function (body) {
     try {
+      const isHtmlResponse =
+        typeof res.get === "function" &&
+        ((res.get("Content-Type") || "").includes("text/html") ||
+          (res.get("Content-Type") || "").includes("application/xhtml+xml"));
+
+      if (Buffer.isBuffer(body) && isHtmlResponse) {
+        body = body.toString("utf8");
+      }
+
       if (typeof body === "string") {
+        if (
+          body.includes("</head>") &&
+          !body.includes("/css/theme-blue.css") &&
+          !body.includes('href="/css/theme-blue.css"')
+        ) {
+          body = body.replace(
+            "</head>",
+            '  <link rel="stylesheet" href="/css/theme-blue.css">\n</head>',
+          );
+        }
+
         if (body.indexOf("₹") !== -1) body = body.replace(/₹/g, "$");
 
         // Replace India flag emoji with US flag emoji
