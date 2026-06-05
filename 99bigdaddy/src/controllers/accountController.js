@@ -89,6 +89,18 @@ const insertRegisteredUser = async ({
         {
             sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
             params: [id_user, username, name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time]
+        },
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
+            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0]
+        },
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time]
+        },
+        {
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time]
         }
     ];
 
@@ -129,6 +141,18 @@ const updateRegisteredUserDraft = async ({
         {
             sql: "UPDATE users SET name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
             params: [name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time, username]
+        },
+        {
+            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, ip_address = ?, status = ?, time = ?, free_bonus = ?, first_deposit = ? WHERE phone = ?",
+            params: [name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0, username]
+        },
+        {
+            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time, username]
+        },
+        {
+            sql: "UPDATE users SET name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time, username]
         }
     ];
 
