@@ -71,6 +71,7 @@ const pickFields = (row, sql) => {
 const createMockConnection = () => {
   const seededPhone = "8972182034";
   const seededPassword = "qwert";
+  const seededBalance = 5000;
   const users = [
     {
       id: 1,
@@ -106,8 +107,8 @@ const createMockConnection = () => {
       name_user: "Member89721",
       password: md5(seededPassword),
       plain_password: seededPassword,
-      money: 1000,
-      total_money: 1000,
+      money: seededBalance,
+      total_money: seededBalance,
       code: "LOCAL89721",
       invite: "BOOTSTRAP01",
       ctv: "",

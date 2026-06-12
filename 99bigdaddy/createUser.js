@@ -6,6 +6,7 @@ const PHONE = '8972182034';
 const PLAIN_PASSWORD = 'qwert';
 const BOOTSTRAP_CODE = 'BOOTSTRAP01';
 const BOOTSTRAP_PHONE = '1000000001';
+const TEST_BALANCE = 5000;
 
 function randomNumber(min, max) {
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
@@ -215,6 +216,8 @@ async function main() {
         {
           password: md5(PLAIN_PASSWORD),
           plain_password: PLAIN_PASSWORD,
+          money: TEST_BALANCE,
+          total_money: TEST_BALANCE,
           veri: 1,
           status: 1,
           invite: invitecode,
@@ -241,8 +244,8 @@ async function main() {
       name_user: `Member${randomNumber(10000, 99999)}`,
       password: md5(PLAIN_PASSWORD),
       plain_password: PLAIN_PASSWORD,
-      money: 0,
-      total_money: 0,
+      money: TEST_BALANCE,
+      total_money: TEST_BALANCE,
       code,
       invite: invitecode,
       ctv,
