@@ -1,12 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Drakon mark">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Drakon mark">
   <defs>
-    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffe8a3"/>
-      <stop offset="45%" stop-color="#f7c857"/>
-      <stop offset="100%" stop-color="#c98e1f"/>
+    <radialGradient id="glow" cx="50%" cy="42%" r="44%">
+      <stop offset="0%" stop-color="#ffb649"/>
+      <stop offset="55%" stop-color="#ff6b00"/>
+      <stop offset="100%" stop-color="#120500"/>
+    </radialGradient>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6f7f9"/>
+      <stop offset="32%" stop-color="#c9cbd0"/>
+      <stop offset="65%" stop-color="#6c7078"/>
+      <stop offset="100%" stop-color="#2b2d33"/>
     </linearGradient>
   </defs>
-  <rect width="128" height="128" rx="28" fill="#16110b"/>
-  <path d="M24 21h39c24 0 42 5 54 16-7 0-15 3-23 10 4 5 7 11 7 18 0 24-18 42-47 42H24zm25 23v42h11c17 0 27-8 27-21s-10-21-27-21z" fill="url(#gold)"/>
-  <path d="M83 34c8 2 17 8 21 15-7-1-15 1-21 7z" fill="#fff1bf" opacity=".75"/>
+  <rect width="256" height="256" rx="32" fill="#000"/>
+  <circle cx="128" cy="108" r="78" fill="url(#glow)" opacity=".95"/>
+  <path d="M78 74c7-21 24-42 39-49-2 16 2 30 10 40-19 0-34 3-49 9z" fill="#1e2128" stroke="#7f848d" stroke-width="4"/>
+  <path d="M178 74c-7-21-24-42-39-49 2 16-2 30-10 40 19 0 34 3 49 9z" fill="#1e2128" stroke="#7f848d" stroke-width="4"/>
+  <path d="M50 130c9-41 42-82 78-92 36 10 69 51 78 92-5 29-19 53-41 68-13 9-33 16-37 16s-24-7-37-16c-22-15-36-39-41-68z" fill="#14171d" stroke="#585c64" stroke-width="5"/>
+  <path d="M81 108l27-23 33 14-24 21z" fill="#8d1400"/>
+  <path d="M175 108l-27-23-33 14 24 21z" fill="#8d1400"/>
+  <path d="M90 115l25 4-12 18-27 0z" fill="#ffd348"/>
+  <path d="M166 115l-25 4 12 18 27 0z" fill="#ffd348"/>
+  <path d="M99 149c14-6 23-8 29-8s15 2 29 8c-6 18-16 29-29 33-13-4-23-15-29-33z" fill="#0d0f13"/>
+  <path d="M106 160h44l-8 16-14 16-14-16z" fill="#ff7200"/>
+  <path d="M111 167h34l-5 11-12 14-12-14z" fill="#ffd04a"/>
+  <path d="M80 206h96l-11 9-37 16-37-16z" fill="url(#metal)" stroke="#1d130d" stroke-width="3"/>
 </svg>

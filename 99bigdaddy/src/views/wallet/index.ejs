@@ -191,12 +191,25 @@
             font-size: 15px;
         }
 
-        .section {
+        .wallet-page .section {
             margin-top: 18px;
             background: var(--card);
             border-radius: 16px;
             padding: 18px 16px;
             box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .transfer-in-panels .section + .section {
+            margin-top: 18px;
+        }
+
+        .transfer-in-panels {
+            display: none;
+        }
+
+        .transfer-in-panels.active {
+            display: block;
         }
 
         .section-title {
@@ -424,22 +437,24 @@
                     <button class="action-button primary" id="fdCreateAction">Transfer In</button>
                 </div>
 
-                <div class="notice">Funds are safe and secure, and can be transferred only after the selected FD tenure is complete.</div>
+                <div class="notice">Funds are safe and secure, and can be transferred only after the selected Copy Gaming tenure is complete.</div>
                 <div class="learn-link">Learn about safes &raquo;</div>
             </div>
 
-            <div class="section">
-                <h2 class="section-title">Fixed Deposit Plans</h2>
-                <div class="plan-list" id="fdPlans"></div>
-                <div class="deposit-form">
-                    <input id="fdAmount" class="amount-input" type="number" min="1" step="0.01" placeholder="Enter amount to transfer in">
-                    <button class="action-button primary" id="fdCreateButton">Confirm</button>
+            <div class="transfer-in-panels" id="transferInPanels">
+                <div class="section">
+                    <h2 class="section-title">Copy Gaming</h2>
+                    <div class="plan-list" id="fdPlans"></div>
+                    <div class="deposit-form">
+                        <input id="fdAmount" class="amount-input" type="number" min="1" step="0.01" placeholder="Enter amount to transfer in">
+                        <button class="action-button primary" id="fdCreateButton">Confirm</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="section">
-                <h2 class="section-title">Historical records</h2>
-                <div class="records" id="fdHistory"></div>
+                <div class="section">
+                    <h2 class="section-title">Historical records</h2>
+                    <div class="records" id="fdHistory"></div>
+                </div>
             </div>
 
             <div class="quick-links">
@@ -489,8 +504,18 @@
             window.alert(message);
         }
 
+        const defaultCopyGamingPlans = [
+            { days: 10, dailyRate: 0.50 },
+            { days: 30, dailyRate: 1.11 },
+            { days: 90, dailyRate: 2.22 }
+        ];
+
+        function getCopyGamingPlans(plans) {
+            return Array.isArray(plans) && plans.length ? plans : defaultCopyGamingPlans;
+        }
+
         function renderPlans(plans) {
-            const html = (plans || []).map((plan) => `
+            const html = getCopyGamingPlans(plans).map((plan) => `
                 <div class="plan-card ${Number(plan.days) === Number(selectedFdPlan) ? 'active' : ''}" data-days="${plan.days}">
                     <div class="plan-top">
                         <span>${plan.days} days</span>
@@ -505,7 +530,7 @@
         function renderHistory(summary) {
             const history = (summary && summary.history) || [];
             if (!history.length) {
-                $('#fdHistory').html('<div class="empty-state">No fixed deposit records yet.</div>');
+                $('#fdHistory').html('<div class="empty-state">No copy gaming records yet.</div>');
                 return;
             }
 
@@ -515,7 +540,7 @@
                 const tagClass = isWithdrawn ? 'out' : 'in';
                 const tagLabel = isWithdrawn ? 'Transfer Out' : 'Transfer In';
                 const action = isMatured
-                    ? `<button class="action-button secondary fd-withdraw-button" data-id="${item.id}" style="height:40px;margin-top:10px;">Withdraw Matured FD</button>`
+                    ? `<button class="action-button secondary fd-withdraw-button" data-id="${item.id}" style="height:40px;margin-top:10px;">Withdraw Matured Copy Gaming</button>`
                     : '';
 
                 return `
@@ -563,7 +588,7 @@
             $('#fdAccumulatedRevenue').text(formatMoney(accumulatedRevenue));
             $('#fdRateLabel').text(`My interest rate ${Number(weightedPlan.dailyRate || 0).toFixed(2)}`);
 
-            renderPlans(summary ? summary.plans : []);
+            renderPlans(summary ? summary.plans : defaultCopyGamingPlans);
             renderHistory(summary || {});
         }
 
@@ -621,9 +646,9 @@
                     }
                 },
                 error: function () {
-                    notify('FD transfer in failed.');
-                }
-            });
+                notify('Copy Gaming transfer in failed.');
+            }
+        });
         }
 
         function withdrawMaturedFd(depositId) {
@@ -641,9 +666,9 @@
                     }
                 },
                 error: function () {
-                    notify('FD transfer out failed.');
-                }
-            });
+                notify('Copy Gaming transfer out failed.');
+            }
+        });
         }
 
         $(document).on('click', '.plan-card', function () {
@@ -653,11 +678,15 @@
             }
         });
 
-        $('#fdCreateButton, #fdCreateAction').on('click', createFd);
+        $('#fdCreateButton').on('click', createFd);
+        $('#fdCreateAction').on('click', function () {
+            $('#transferInPanels').addClass('active');
+            document.getElementById('transferInPanels').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
         $('#fdWithdrawAction').on('click', function () {
             const matured = ((latestFixedDepositSummary && latestFixedDepositSummary.history) || []).find((item) => item.status === 'matured');
             if (!matured) {
-                notify('No matured FD is available for transfer out yet.');
+                notify('No matured Copy Gaming is available for transfer out yet.');
                 return;
             }
             withdrawMaturedFd(matured.id);

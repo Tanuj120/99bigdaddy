@@ -20,6 +20,51 @@
     <link href="/css/wallet/recharge_styles.css" rel="stylesheet" />
     <link rel="shortcut icon" href="/images/drakon-mark.svg" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        .currency-chooser {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            background: #eaf6ff;
+            border: 1px solid #b9ddfb;
+            border-radius: 999px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .currency-option {
+            min-width: 58px;
+            height: 28px;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: #55708c;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .currency-option.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #2098e8, #5abdf4);
+            box-shadow: 0 4px 10px rgba(32, 152, 232, 0.22);
+        }
+
+        .currency-help {
+            margin-top: 8px;
+            color: #55708c;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .amount-currency-symbol {
+            min-width: 24px;
+            color: #2098e8;
+            font-weight: 800;
+            text-align: center;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"
         integrity="sha512-NQfB/bDaB8kaSXF8E77JjhHG5PM6XVRxvHzkZiwl3ddWCEPBa23T76MuWSwAJdMGJnmQqM0VeY9kFszsrBEFrQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -157,14 +202,18 @@
                                     <div data-v-67caa467="" class="van-image" style="width: 20px; height: 20px;">
                                         <img src="/images/htmls2.png" class="van-image__img">
                                     </div>
-                                    <span data-v-67caa467="" id="inr" class="m-l-10">INR ₹</span>
+                                    <span data-v-67caa467="" id="currency_label" class="m-l-10">INR</span>
+                                </div>
+                                <div class="currency-chooser" id="currency_chooser" aria-label="Select deposit currency">
+                                    <button type="button" class="currency-option active" data-currency="INR">INR</button>
+                                    <button type="button" class="currency-option" data-currency="USD">USD $</button>
                                 </div>
                             </div>
                             <!-- Money Amount Field Label -->
 
                             <!-- Money Amount Field Input -->
                             <div data-v-67caa467="" class="box numberSize c-row c-row-between c-row-middle p-l-10">
-                                <div data-v-67caa467="" id="inr_input" class="fuhao">₹</div>
+                                <div data-v-67caa467="" id="inr_input" class="fuhao amount-currency-symbol">₹</div>
                                 <div data-v-67caa467="" class="input van-cell van-field">
                                     <div class="van-cell__value van-cell__value--alone van-field__value">
                                         <div class="van-field__body">
@@ -175,6 +224,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="currency-help" id="currency_conversion_note"></div>
                             <!-- Money Amount Field Input -->
 
                             <!-- Quick Money Amount Options -->
@@ -263,6 +313,17 @@
         let MoneyAmountInput = document.querySelector("#money_amount_input")
         let QuickMoneyOptions = document.querySelector("#quick_money_options")
         let DepositFundButton = document.querySelector("#deposit_fund_btn")
+        let CurrencyChooser = document.querySelector("#currency_chooser")
+        let CurrencyLabel = document.querySelector("#currency_label")
+        let CurrencySymbol = document.querySelector("#inr_input")
+        let CurrencyConversionNote = document.querySelector("#currency_conversion_note")
+
+        const USD_TO_INR_RATE = 82
+
+        const CurrencyMap = {
+            INR: "INR",
+            USD: "USD",
+        }
 
         const PaymentMethodsMap = {
             UPI_GATEWAY: "upi_gateway",
@@ -276,7 +337,7 @@
             <div data-v-67caa467="" data-money="100" class="li action">
                 <span data-v-67caa467="" class="number">100</span>
             </div>
-            <div data-v-67caa467="" data-money="300" class="li action">
+            <div data-v-67caa467="" data-money="300" class="li">
                 <span data-v-67caa467="" class="number">300</span>
             </div>
             <div data-v-67caa467="" data-money="500" class="li">
@@ -296,29 +357,60 @@
             </div>
         `
 
-        const QuickMoneyForUSDT = `
-            <div data-v-67caa467="" data-money="4" class="li action">
-                <span data-v-67caa467="" class="number">4$</span>
+        const QuickMoneyForUSD = `
+            <div data-v-67caa467="" data-money="5" class="li action">
+                <span data-v-67caa467="" class="number">$5</span>
             </div>
-            <div data-v-67caa467="" data-money="8" class="li">
-                <span data-v-67caa467="" class="number">8$</span>
+            <div data-v-67caa467="" data-money="10" class="li">
+                <span data-v-67caa467="" class="number">$10</span>
+            </div>
+            <div data-v-67caa467="" data-money="25" class="li">
+                <span data-v-67caa467="" class="number">$25</span>
             </div>
             <div data-v-67caa467="" data-money="50" class="li">
-                <span data-v-67caa467="" class="number">50$</span>
-            </div>
-            <div data-v-67caa467="" data-money="85" class="li">
-                <span data-v-67caa467="" class="number">85$</span>
+                <span data-v-67caa467="" class="number">$50</span>
             </div>
             <div data-v-67caa467="" data-money="100" class="li">
-                <span data-v-67caa467="" class="number">100$</span>
+                <span data-v-67caa467="" class="number">$100</span>
             </div>
-            <div data-v-67caa467="" data-money="1000" class="li">
-                <span data-v-67caa467="" class="number">1000$</span>
+            <div data-v-67caa467="" data-money="500" class="li">
+                <span data-v-67caa467="" class="number">$500</span>
             </div>
         `
 
         let selectedPaymentMethod = ''
         let inputMoney = 0
+        let selectedCurrency = CurrencyMap.INR
+
+        const getDefaultAmount = () => selectedCurrency === CurrencyMap.USD ? '5' : '100'
+
+        const getQuickMoneyOptions = () => selectedCurrency === CurrencyMap.USD ? QuickMoneyForUSD : QuickMoneyForRegular
+
+        const getPayableMoneyAmount = (amount) => {
+            const numericAmount = Number(amount)
+            if (!numericAmount || numericAmount <= 0) return 0
+            return selectedCurrency === CurrencyMap.USD ? Math.round(numericAmount * USD_TO_INR_RATE) : numericAmount
+        }
+
+        const updateCurrencyDisplay = () => {
+            const isDollar = selectedCurrency === CurrencyMap.USD
+            CurrencyLabel.textContent = isDollar ? 'USD $' : 'INR'
+            CurrencySymbol.innerHTML = isDollar ? '$' : '&#8377;'
+            MoneyAmountInput.placeholder = isDollar ? 'Please enter amount in dollars' : 'Please enter the amount'
+            CurrencyConversionNote.textContent = ''
+        }
+
+        const bindQuickMoneyOptions = () => {
+            Array.from(QuickMoneyOptions.children).forEach((child) => {
+                child.addEventListener("click", handleQuickMoney(child))
+            })
+        }
+
+        const setDepositAmount = (amount) => {
+            inputMoney = Number(amount)
+            MoneyAmountInput.value = amount
+            updateCurrencyDisplay()
+        }
 
         const alertMessage = (text) => {
             const msg = document.createElement('div');
@@ -374,49 +466,10 @@
                 return Array.from(item.classList).includes("action")
             })
 
-            switch (currentPaymentMethod.getAttribute("type")) {
-                case PaymentMethodsMap.UPI_GATEWAY:
-                    inputMoney = '100'
-                    MoneyAmountInput.value = '100'
-                    selectedPaymentMethod = PaymentMethodsMap.UPI_GATEWAY
-                    QuickMoneyOptions.innerHTML = QuickMoneyForRegular
-                    break;
-                case PaymentMethodsMap.WOW_PAY:
-                    inputMoney = '100'
-                    MoneyAmountInput.value = '100'
-                    selectedPaymentMethod = PaymentMethodsMap.WOW_PAY
-                    QuickMoneyOptions.innerHTML = QuickMoneyForRegular
-                    break;
-                case PaymentMethodsMap.MANUAL_PAY:
-                    inputMoney = '100'
-                    MoneyAmountInput.value = '100'
-                    selectedPaymentMethod = PaymentMethodsMap.MANUAL_PAY
-                    QuickMoneyOptions.innerHTML = QuickMoneyForRegular
-                    break;
-                case PaymentMethodsMap.USDT_MANUAL:
-                    inputMoney = '4'
-                    MoneyAmountInput.value = '4'
-                    selectedPaymentMethod = PaymentMethodsMap.USDT_MANUAL
-                    QuickMoneyOptions.innerHTML = QuickMoneyForUSDT
-                    break;
-                case PaymentMethodsMap.USDT:
-                    inputMoney = '4'
-                    MoneyAmountInput.value = '4'
-                    selectedPaymentMethod = PaymentMethodsMap.USDT
-                    QuickMoneyOptions.innerHTML = QuickMoneyForUSDT
-                    break;
-                default:
-                    inputMoney = '100'
-                    MoneyAmountInput.value = '100'
-                    selectedPaymentMethod = PaymentMethodsMap.UPI_GATEWAY
-                    QuickMoneyOptions.innerHTML = QuickMoneyForRegular
-                    break;
-            }
-
-            Array.from(QuickMoneyOptions.children).forEach((child) => {
-                child.removeEventListener("click", handleQuickMoney(child))
-                child.addEventListener("click", handleQuickMoney(child))
-            })
+            selectedPaymentMethod = currentPaymentMethod?.getAttribute("type") || PaymentMethodsMap.MANUAL_PAY
+            QuickMoneyOptions.innerHTML = getQuickMoneyOptions()
+            setDepositAmount(getDefaultAmount())
+            bindQuickMoneyOptions()
         }
 
         const handleSelectPaymentGateway = (event) => {
@@ -439,14 +492,14 @@
         }
 
         const handleMoneyAmountInput = (event) => {
-            inputMoney = parseInt(MoneyAmountInput.value)
+            inputMoney = Number(MoneyAmountInput.value)
+            updateCurrencyDisplay()
         }
 
         const handleQuickMoney = (item) => (event) => {
             const amount = parseInt(item.getAttribute("data-money"))
 
-            inputMoney = amount
-            MoneyAmountInput.value = amount
+            setDepositAmount(amount)
 
             Array.from(QuickMoneyOptions.children).forEach((child) => {
                 child.classList.remove("action")
@@ -455,11 +508,31 @@
             item.classList.add("action")
         }
 
+        const handleSelectCurrency = (event) => {
+            selectedCurrency = event.currentTarget.getAttribute("data-currency") || CurrencyMap.INR
+
+            Array.from(CurrencyChooser.children).forEach((child) => {
+                child.classList.toggle("active", child.getAttribute("data-currency") === selectedCurrency)
+            })
+
+            QuickMoneyOptions.innerHTML = getQuickMoneyOptions()
+            setDepositAmount(getDefaultAmount())
+            bindQuickMoneyOptions()
+        }
+
         const handleDepositFund = (event) => {
             const minimumMoneyAllowed = parseInt(`<%=MinimumMoney%>`)
+            const payableMoneyAmount = getPayableMoneyAmount(inputMoney)
+            const minimumDollarAllowed = Math.ceil(minimumMoneyAllowed / USD_TO_INR_RATE)
 
-            if (!inputMoney || !(inputMoney >= minimumMoneyAllowed)) {
-                alertMessage(`Money is Required and it should be ₹${minimumMoneyAllowed} or above!`)
+            if (!inputMoney || !(payableMoneyAmount >= minimumMoneyAllowed)) {
+                const minimumText = selectedCurrency === CurrencyMap.USD ? `$${minimumDollarAllowed}` : `₹${minimumMoneyAllowed}`
+                alertMessage(`Money is required and it should be ${minimumText} or above!`)
+                return
+            }
+
+            if (selectedCurrency === CurrencyMap.USD) {
+                handleManualUSDTPaymentRequest(inputMoney)
                 return
             }
 
@@ -564,6 +637,10 @@
         MoneyAmountInput.addEventListener("input", handleMoneyAmountInput)
 
         MoneyAmountInput.addEventListener("keypress", handleNumericInput);
+
+        Array.from(CurrencyChooser.children).forEach((child) => {
+            child.addEventListener("click", handleSelectCurrency)
+        })
 
         DepositFundButton.addEventListener("click", handleDepositFund);
 

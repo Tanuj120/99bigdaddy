@@ -263,7 +263,7 @@ const fixedDepositSummary = async (req, res) => {
         });
     } catch (error) {
         return res.status(200).json({
-            message: error?.message || 'Failed to load fixed deposits',
+            message: error?.message || 'Failed to load Copy Gaming',
             status: false,
             timeStamp: timeNow,
         });
@@ -286,7 +286,7 @@ const createFixedDeposit = async (req, res) => {
     const plan = getFixedDepositPlan(tenureDays);
     if (!plan) {
         return res.status(200).json({
-            message: 'Invalid FD plan selected',
+            message: 'Invalid Copy Gaming plan selected',
             status: false,
             timeStamp: timeNow,
         });
@@ -321,14 +321,14 @@ const createFixedDeposit = async (req, res) => {
         );
 
         return res.status(200).json({
-            message: `FD created for ${plan.days} days`,
+            message: `Copy Gaming created for ${plan.days} days`,
             status: true,
             data: buildFixedDepositSummary(await getFixedDepositRows(user.phone)),
             timeStamp: timeNow,
         });
     } catch (error) {
         return res.status(200).json({
-            message: error?.message || 'Failed to create FD',
+            message: error?.message || 'Failed to create Copy Gaming',
             status: false,
             timeStamp: timeNow,
         });
@@ -361,7 +361,7 @@ const withdrawFixedDeposit = async (req, res) => {
 
         if (!rows || rows.length === 0) {
             return res.status(200).json({
-                message: 'FD not found',
+                message: 'Copy Gaming not found',
                 status: false,
                 timeStamp: timeNow,
             });
@@ -370,7 +370,7 @@ const withdrawFixedDeposit = async (req, res) => {
         const fd = rows[0];
         if (fd.status === 'withdrawn') {
             return res.status(200).json({
-                message: 'FD already withdrawn',
+                message: 'Copy Gaming already withdrawn',
                 status: false,
                 timeStamp: timeNow,
             });
@@ -378,7 +378,7 @@ const withdrawFixedDeposit = async (req, res) => {
 
         if (Number(fd.maturity_time || 0) > Date.now()) {
             return res.status(200).json({
-                message: 'You can withdraw this FD only after maturity',
+                message: 'You can withdraw this Copy Gaming only after maturity',
                 status: false,
                 timeStamp: timeNow,
             });
@@ -394,14 +394,14 @@ const withdrawFixedDeposit = async (req, res) => {
         );
 
         return res.status(200).json({
-            message: 'FD withdrawn successfully',
+            message: 'Copy Gaming withdrawn successfully',
             status: true,
             data: buildFixedDepositSummary(await getFixedDepositRows(user.phone)),
             timeStamp: timeNow,
         });
     } catch (error) {
         return res.status(200).json({
-            message: error?.message || 'Failed to withdraw FD',
+            message: error?.message || 'Failed to withdraw Copy Gaming',
             status: false,
             timeStamp: timeNow,
         });
