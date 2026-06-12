@@ -40,6 +40,32 @@ function timerJoin(params = '', addHours = 0) {
         return years + '-' + months + '-' + days + ' ' + hours + ':' + minutes + ':' + seconds + ' ' + ampm;
     }
 
+const makeInitialPeriod = () => {
+    const date = new Date();
+    return Number(`${formateT(date.getFullYear())}${formateT(date.getMonth() + 1)}${formateT(date.getDate())}10000`);
+}
+
+const ensureK3Round = async (game) => {
+    const [activeRows] = await connection.query('SELECT period FROM k3 WHERE status = 0 AND game = ? ORDER BY id DESC LIMIT 1', [game]);
+    if (activeRows[0]) {
+        return activeRows[0].period;
+    }
+
+    const [latestRows] = await connection.query('SELECT period FROM k3 WHERE game = ? ORDER BY id DESC LIMIT 1', [game]);
+    const timeNow = Date.now();
+
+    if (!latestRows[0]) {
+        const basePeriod = makeInitialPeriod();
+        await connection.execute('INSERT INTO k3 SET period = ?, result = ?, game = ?, status = ?, time = ?', [basePeriod, makeid(3), game, 1, timeNow]);
+        await connection.execute('INSERT INTO k3 SET period = ?, result = ?, game = ?, status = ?, time = ?', [basePeriod + 1, '0', game, 0, timeNow]);
+        return String(basePeriod + 1);
+    }
+
+    const nextPeriod = Number(latestRows[0].period) + 1;
+    await connection.execute('INSERT INTO k3 SET period = ?, result = ?, game = ?, status = ?, time = ?', [nextPeriod, '0', game, 0, timeNow]);
+    return String(nextPeriod);
+}
+
 const rosesPlus = async (auth, money) => {
     const [level] = await connection.query('SELECT * FROM level ');
     let level0 = level[0];
@@ -124,6 +150,7 @@ const betK3 = async (req, res) => {
         //     });
         // }
 
+        await ensureK3Round(Number(game));
         const [k3Now] = await connection.query(`SELECT period FROM k3 WHERE status = 0 AND game = ${game} ORDER BY id DESC LIMIT 1 `);
         const [user] = await connection.query('SELECT `phone`, `code`, `invite`, `level`, `money` FROM users WHERE token = ? AND veri = 1  LIMIT 1 ', [auth]);
         if (k3Now.length < 1 || user.length < 1) {
@@ -275,14 +302,18 @@ const addK3 = async (game) => {
         let result2 = makeid(3);
         let timeNow = Date.now();
         let [k5D] = await connection.query(`SELECT period FROM k3 WHERE status = 0 AND game = ${game} ORDER BY id DESC LIMIT 1 `);
+        if (!k5D[0]) {
+            await ensureK3Round(game);
+            return;
+        }
         const [setting] = await connection.query('SELECT * FROM `admin` ');
         let period = k5D[0].period;
 
         let nextResult = '';
-        if (game == 1) nextResult = setting[0].k3d;
-        if (game == 3) nextResult = setting[0].k3d3;
-        if (game == 5) nextResult = setting[0].k3d5;
-        if (game == 10) nextResult = setting[0].k3d10;
+        if (game == 1) nextResult = setting[0]?.k3d || '-1';
+        if (game == 3) nextResult = setting[0]?.k3d3 || '-1';
+        if (game == 5) nextResult = setting[0]?.k3d5 || '-1';
+        if (game == 10) nextResult = setting[0]?.k3d10 || '-1';
 
         let newArr = '';
         if (nextResult == '-1') {
@@ -320,6 +351,10 @@ const addK3 = async (game) => {
 
 async function funHanding(game) {
     const [k5d] = await connection.query(`SELECT * FROM k3 WHERE status != 0 AND game = ${game} ORDER BY id DESC LIMIT 1 `);
+    if (!k5d[0]) {
+        await ensureK3Round(game);
+        return;
+    }
     let k5dInfo = k5d[0];
 
     // update ket qua
@@ -1027,6 +1062,7 @@ const listOrderOld = async (req, res) => {
 
     let game = Number(gameJoin);
 
+    const activePeriod = await ensureK3Round(game);
     const [k5d] = await connection.query(`SELECT * FROM k3 WHERE status != 0 AND game = '${game}' ORDER BY id DESC LIMIT ${pageno}, ${pageto} `);
     const [k5dAll] = await connection.query(`SELECT * FROM k3 WHERE status != 0 AND game = '${game}' `);
     const [period] = await connection.query(`SELECT period FROM k3 WHERE status = 0 AND game = '${game}' ORDER BY id DESC LIMIT 1 `);
@@ -1037,11 +1073,12 @@ const listOrderOld = async (req, res) => {
             data: {
                 gameslist: [],
             },
+            period: period[0]?.period || activePeriod,
             page: 1,
             status: false
         });
     }
-    if (!pageno || !pageto || !user[0] || !k5d[0] || !period[0]) {
+    if (pageno === undefined || pageto === undefined || !user[0] || !k5d[0] || !period[0]) {
         return res.status(200).json({
             message: 'Error!',
             status: false
@@ -1077,6 +1114,7 @@ const GetMyEmerdList = async (req, res) => {
     }
 
     let game = Number(gameJoin);
+    await ensureK3Round(game);
 
     const [user] = await connection.query('SELECT `phone`, `code`, `invite`, `level`, `money` FROM users WHERE token = ? AND veri = 1 LIMIT 1 ', [auth]);
     const [result_5d] = await connection.query(`SELECT * FROM result_k3 WHERE phone = ? AND game = '${game}' ORDER BY id DESC LIMIT ${Number(pageno) + ',' + Number(pageto)}`, [user[0].phone]);
@@ -1093,7 +1131,7 @@ const GetMyEmerdList = async (req, res) => {
             status: false
         });
     }
-    if (!pageno || !pageto || !user[0] || !result_5d[0]) {
+    if (pageno === undefined || pageto === undefined || !user[0] || !result_5d[0]) {
         return res.status(200).json({
             message: 'Error!',
             status: true

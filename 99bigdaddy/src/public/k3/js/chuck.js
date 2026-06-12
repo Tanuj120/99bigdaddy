@@ -1,5 +1,5 @@
 socket.on("data-server-k3", function (msg) {
-    if (msg) {
+    if (msg && Array.isArray(msg.data) && msg.data.length > 1) {
         let checkData = $('html').attr('data-dpr');
         if (checkData == msg.game) {
             pageno = 0;
@@ -163,6 +163,7 @@ function callListOrder() {
             $("#number_result").text("1/" + response.page);
             ShowListOrder(list_orders);
             $('.Loading').fadeOut(0);
+            if (!list_orders.length) return;
             let result = String(list_orders[0].result).split('');
             $('.slot-transform:eq(0) .slot-num').attr('class', `slot-num bg${result[0]}`);
             $('.slot-transform:eq(1) .slot-num').attr('class', `slot-num bg${result[1]}`);

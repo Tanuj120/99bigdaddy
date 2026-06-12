@@ -59,6 +59,7 @@ var pageno = 0;
 var limit = 10;
 var page = 1;
 socket.on("data-server", function (msg) {
+  if (!msg || !Array.isArray(msg.data) || !msg.data.length) return;
   if (msg.data[0].game != 'wingo') return;
   $(".Loading").fadeIn(0);
   setTimeout(() => {
@@ -141,7 +142,7 @@ socket.on("data-server", function (msg) {
             $(".game-list .con-box:eq(0) .page-nav .number").text("1/" + response.page);
 
             // Assuming firstGame is defined somewhere in your code
-            if (firstGame && firstGame.stage === list_orders[0].period) {
+            if (firstGame && list_orders.length && firstGame.stage === list_orders[0].period) {
               var modal = document.getElementById("myModal");
               modal.style.display = "block";
               var myModalheader = document.getElementById("myModal_header");

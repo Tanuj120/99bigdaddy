@@ -4,7 +4,7 @@ var limit = 10;
 var page = 1;
 socket.on("data-server-5d", function (msg) {
     console.log(msg.chane);
-    if (msg) {
+    if (msg && Array.isArray(msg.data) && msg.data.length > 1) {
         let checkData = $('html').attr('data-dpr');
         if (checkData == msg.game) {
             pageno = 0;
@@ -932,4 +932,3 @@ $('#game-join .item').click(async function (e) {
     $(this).find('.img .van-image:eq(0)').fadeIn(0);
     $(this).find('.img .van-image:eq(1)').fadeOut(0);
 });
-
