@@ -1,4 +1,5 @@
 import connection from "../config/connectDB.js";
+import { calculateRemainingUsageAmount } from "../utils/withdrawalTurnover.js";
 import jwt from 'jsonwebtoken'
 import md5 from "md5";
 import request from 'request';
@@ -50,18 +51,30 @@ const ensureWithdrawalSchema = async () => {
     return withdrawalSchemaPromise;
 }
 
-const getRemainingBetAmount = async (db, phone) => {
+const getRemainingUsageAmount = async (db, phone) => {
     const [rechargeRows] = await db.query(
-        'SELECT COALESCE(SUM(money), 0) AS total FROM recharge WHERE phone = ? AND status = 1',
+        'SELECT COALESCE(SUM(CASE WHEN money > 0 THEN money ELSE 0 END), 0) AS total FROM recharge WHERE phone = ? AND status = 1',
         [phone]
     );
     const betTables = ['minutes_1', 'result_5d', 'result_k3'];
     let totalBet = 0;
     for (const tableName of betTables) {
-        const [rows] = await db.query(`SELECT COALESCE(SUM(money), 0) AS total FROM ${tableName} WHERE phone = ?`, [phone]);
+        const [rows] = await db.query(
+            `SELECT COALESCE(SUM(CASE WHEN money > 0 THEN money ELSE 0 END), 0) AS total FROM ${tableName} WHERE phone = ?`,
+            [phone]
+        );
         totalBet += Number(rows?.[0]?.total || 0);
     }
-    return formatMoney(Math.max(Number(rechargeRows?.[0]?.total || 0) - totalBet, 0));
+    const [copyGamingRows] = await db.query(
+        'SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) AS total FROM fixed_deposits WHERE phone = ?',
+        [phone]
+    );
+
+    return calculateRemainingUsageAmount({
+        approvedDeposits: rechargeRows?.[0]?.total,
+        gameBets: totalBet,
+        copyGamingPrincipal: copyGamingRows?.[0]?.total,
+    });
 }
 
 const getFixedDepositPlan = (days) => {
@@ -1586,7 +1599,7 @@ const infoUserBank = async (req, res) => {
         });
     };
     const userInfo = user[0];
-    const result = await getRemainingBetAmount(connection, userInfo.phone);
+    const result = await getRemainingUsageAmount(connection, userInfo.phone);
 
     const [userBank] = await connection.query('SELECT * FROM user_bank WHERE phone = ? ', [userInfo.phone]);
     return res.status(200).json({
@@ -1646,11 +1659,11 @@ const withdrawal3 = async (req, res) => {
             return res.status(200).json({ message: 'You can only make 3 withdrawals per day', status: false, timeStamp: Date.now() });
         }
 
-        const remainingBetAmount = await getRemainingBetAmount(db, userInfo.phone);
-        if (remainingBetAmount > 0) {
+        const remainingUsageAmount = await getRemainingUsageAmount(db, userInfo.phone);
+        if (remainingUsageAmount > 0) {
             await transaction.rollback();
             return res.status(200).json({
-                message: `Please complete the remaining betting amount of ₹${remainingBetAmount.toFixed(2)}`,
+                message: `Please complete the remaining game or Copy Gaming usage amount of ₹${remainingUsageAmount.toFixed(2)}`,
                 status: false,
                 timeStamp: Date.now(),
             });

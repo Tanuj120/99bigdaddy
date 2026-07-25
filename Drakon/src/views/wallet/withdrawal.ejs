@@ -7655,7 +7655,7 @@
                         <div data-v-25d9c352="" class="item c-row c-row-middle">
                             <div data-v-25d9c352="" class="m-r-10 van-image" style="width: 30px; height: 30px;"><img
                                     src="/images/king (5).png" class="van-image__img"></div>
-                            <div data-v-25d9c352="">2. Remaining Betting Amount<br>For Withdrawal: ₹ Loading...</div>
+                            <div data-v-25d9c352="">2. Remaining Game/Copy Gaming Usage<br>For Withdrawal: ₹ Loading...</div>
                         </div>
                         <div data-v-25d9c352="" class="item c-row c-row-middle">
                             <div data-v-25d9c352="" class="m-r-10 van-image" style="width: 30px; height: 30px;"><img
@@ -7717,7 +7717,7 @@
                 let user = response.userInfo[0];
                 $('.money').text("₹" + user.money);
                 console.log(user);
-                $('.bankBox .box .item:eq(1) div:eq(1)').html(`2. Remaining Betting Amount<br>For Withdrawal: ₹ ${response.result}`);
+                $('.bankBox .box .item:eq(1) div:eq(1)').html(`2. Remaining Game/Copy Gaming Usage<br>For Withdrawal: ₹ ${response.result}`);
                 if (!response.datas[0]) return;
                 hasWithdrawalAddress = true;
                 let data = response.datas[0];
