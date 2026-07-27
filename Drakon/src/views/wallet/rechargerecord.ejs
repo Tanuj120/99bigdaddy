@@ -7360,6 +7360,12 @@
 
             return years + '-' + months + '-' + days + ' ' + hours + ':' + minutes + ':' + seconds + ' ' + ampm;
         }
+
+        function formatRechargeAmount(value) {
+            const amount = Number(value);
+            return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
+        }
+
         function loads(datas) {
             let html = datas.map((data) => {
                 return `
@@ -7371,7 +7377,7 @@
                 </div>
                 <div class="info-row">
                     <div class="info-label">Balance</div>
-                    <div class="info-value" style="color: rgb(107, 190, 88);">₹ ${data.money}.00</div>
+                    <div class="info-value" style="color: rgb(107, 190, 88);">₹ ${formatRechargeAmount(data.money)}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Time</div>

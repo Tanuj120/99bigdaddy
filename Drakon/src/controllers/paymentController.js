@@ -9,6 +9,7 @@ let timeNow = Date.now();
 const MINIMUM_DEPOSIT_AMOUNT = 500;
 const MINIMUM_USD_DEPOSIT_AMOUNT = 5;
 const USDT_TO_INR_RATE = 98;
+const USDT_DECIMAL_PLACES = 8;
 const MAX_TRANSACTION_HASH_LENGTH = 191;
 const DEFAULT_USDT_WALLET_ADDRESS = "0xB2e20EB91866CDDEAa588f3cAec76835c442445d";
 const DEFAULT_USDT_QR_CODE_URL = "/index_files/qr.jpeg";
@@ -17,6 +18,17 @@ let rechargeHashSchemaReady = false;
 const normalizeTransactionHash = (hash) => {
     const value = String(hash || "").trim();
     return /^0x[a-fA-F0-9]{64}$/.test(value) ? value.toLowerCase() : value;
+}
+
+const normalizeUsdtAmount = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+        ? Number(amount.toFixed(USDT_DECIMAL_PLACES))
+        : 0;
+}
+
+const convertUsdtToInr = (value) => {
+    return Number((normalizeUsdtAmount(value) * USDT_TO_INR_RATE).toFixed(2));
 }
 
 const isValidTransactionHash = (hash) => {
@@ -219,8 +231,8 @@ const addManualUSDTPaymentRequest = async (req, res) => {
     try {
         const data = req.body
         let auth = req.cookies.auth;
-        let money_usdt = parseFloat(data.money);
-        let money = Number((money_usdt * USDT_TO_INR_RATE).toFixed(2));
+        let money_usdt = normalizeUsdtAmount(data.money);
+        let money = convertUsdtToInr(money_usdt);
         let utr = normalizeTransactionHash(data.utr);
         const minimumMoneyAllowed = MINIMUM_USD_DEPOSIT_AMOUNT
         const today = moment().format("YYYY-MM-DD");
