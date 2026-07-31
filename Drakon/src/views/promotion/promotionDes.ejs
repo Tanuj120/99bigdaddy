@@ -131,7 +131,7 @@
                 }
                 $.ajax({
                     type: "GET",
-                    url: "/api/webapi/myTeam",
+                    url: "/api/webapi/promotion/history",
                     dataType: "json",
                     success: function (response) {
                         MemRender(response.total_roses);

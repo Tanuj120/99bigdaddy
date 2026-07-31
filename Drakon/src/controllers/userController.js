@@ -17,6 +17,7 @@ const DAY_IN_MS = 86400000;
 const LEVEL_INCOME_PERCENTAGES = [5, 3, 2, 1, 1, 1, 1, 1];
 const LEVEL_INCOME_PACKAGE_DAYS = 90;
 const REFERRAL_MAX_LEVEL = 8;
+const REFERRAL_QUERY_CHUNK_SIZE = 500;
 
 let withdrawalSchemaPromise;
 let withdrawalTimeUsesDate = false;
@@ -391,44 +392,72 @@ const isSameDay = (timeValue) => {
         && date.getDate() === now.getDate();
 }
 
-const buildReferralTeam = async (rootUser, maxLevel = REFERRAL_MAX_LEVEL) => {
+const splitIntoChunks = (values, chunkSize = REFERRAL_QUERY_CHUNK_SIZE) => {
+    const chunks = [];
+    for (let index = 0; index < values.length; index += chunkSize) {
+        chunks.push(values.slice(index, index + chunkSize));
+    }
+    return chunks;
+}
+
+const queryByValues = async (values, createQuery) => {
+    const uniqueValues = [...new Set((values || []).map((value) => String(value || '').trim()).filter(Boolean))];
+    const rows = [];
+
+    for (const chunk of splitIntoChunks(uniqueValues)) {
+        const placeholders = chunk.map(() => '?').join(', ');
+        const [chunkRows] = await connection.query(createQuery(placeholders), chunk);
+        rows.push(...(chunkRows || []));
+    }
+
+    return rows;
+}
+
+const loadReferralChildren = (inviteCodes, includeDetails) => queryByValues(
+    inviteCodes,
+    (placeholders) => includeDetails
+        ? `SELECT \`id_user\`, \`name_user\`, \`phone\`, \`code\`, \`invite\`, \`rank\`, \`status\`, \`total_money\`, \`time\` FROM users WHERE \`invite\` IN (${placeholders}) ORDER BY id DESC`
+        : `SELECT \`phone\`, \`code\`, \`invite\`, \`time\` FROM users WHERE \`invite\` IN (${placeholders}) ORDER BY id DESC`
+);
+
+const loadReferralTurnovers = (phones) => queryByValues(
+    phones,
+    (placeholders) => `SELECT \`phone\`, \`daily_turn_over\`, \`total_turn_over\` FROM turn_over WHERE \`phone\` IN (${placeholders})`
+);
+
+const loadReferralCounts = (codes) => queryByValues(
+    codes,
+    (placeholders) => `SELECT \`invite\`, COUNT(*) AS invite_count FROM users WHERE \`invite\` IN (${placeholders}) GROUP BY \`invite\``
+);
+
+const buildReferralTeam = async (rootUser, maxLevel = REFERRAL_MAX_LEVEL, options = {}) => {
+    const includeDetails = options.includeDetails !== false;
     const rootCode = await ensureUserReferralCode(rootUser);
     const rootPhone = String(rootUser.phone || '');
     const levels = Array.from({ length: maxLevel + 1 }, () => []);
     const visitedPhones = new Set([rootPhone].filter(Boolean));
     const expandedCodes = new Set();
-    const pendingCodes = rootCode ? [{ code: rootCode, level: 1 }] : [];
+    let parentCodes = rootCode ? [rootCode] : [];
 
-    while (pendingCodes.length > 0) {
-        const { code: parentCode, level } = pendingCodes.shift();
-        if (!parentCode || level > maxLevel || expandedCodes.has(parentCode)) continue;
-        expandedCodes.add(parentCode);
+    for (let level = 1; level <= maxLevel && parentCodes.length > 0; level++) {
+        const currentCodes = [...new Set(parentCodes.filter((code) => code && !expandedCodes.has(code)))];
+        currentCodes.forEach((code) => expandedCodes.add(code));
+        if (currentCodes.length === 0) break;
 
-        const [rows] = await connection.query(
-            'SELECT `id_user`, `name_user`, `phone`, `code`, `invite`, `rank`, `status`, `total_money`, `time` FROM users WHERE `invite` = ? ORDER BY id DESC',
-            [parentCode]
-        );
+        const rows = await loadReferralChildren(currentCodes, includeDetails);
+        const nextCodes = [];
 
-        for (const row of rows || []) {
+        for (const row of rows) {
             const phone = String(row.phone || '');
             if (!phone || phone === rootPhone || visitedPhones.has(phone)) continue;
 
             visitedPhones.add(phone);
-
-            const [turnoverRows] = await connection.query(
-                'SELECT `daily_turn_over`, `total_turn_over` FROM turn_over WHERE `phone` = ? LIMIT 1',
-                [phone]
-            );
-            const [inviteCountRows] = row.code
-                ? await connection.query('SELECT COUNT(*) AS invite_count FROM users WHERE `invite` = ?', [row.code])
-                : [[{ invite_count: 0 }]];
-
             const teamUser = {
                 ...row,
                 user_level: level,
-                invite_count: Number(inviteCountRows?.[0]?.invite_count || 0),
-                daily_turn_over: Number(turnoverRows?.[0]?.daily_turn_over || 0),
-                total_turn_over: Number(turnoverRows?.[0]?.total_turn_over || 0),
+                invite_count: 0,
+                daily_turn_over: 0,
+                total_turn_over: 0,
                 total_money: Number(row.total_money || 0),
             };
 
@@ -436,12 +465,34 @@ const buildReferralTeam = async (rootUser, maxLevel = REFERRAL_MAX_LEVEL) => {
 
             const childCode = String(row.code || '').trim();
             if (childCode && level < maxLevel && !expandedCodes.has(childCode)) {
-                pendingCodes.push({ code: childCode, level: level + 1 });
+                nextCodes.push(childCode);
             }
         }
+
+        parentCodes = nextCodes;
     }
 
     const team = levels.slice(1).flat();
+
+    if (includeDetails && team.length > 0) {
+        const [turnoverRows, inviteCountRows] = await Promise.all([
+            loadReferralTurnovers(team.map((user) => user.phone)),
+            loadReferralCounts(team.map((user) => user.code)),
+        ]);
+        const turnoverByPhone = new Map(
+            turnoverRows.map((row) => [String(row.phone || ''), row])
+        );
+        const countByCode = new Map(
+            inviteCountRows.map((row) => [String(row.invite || ''), Number(row.invite_count || 0)])
+        );
+
+        team.forEach((user) => {
+            const turnover = turnoverByPhone.get(String(user.phone || ''));
+            user.invite_count = countByCode.get(String(user.code || '')) || 0;
+            user.daily_turn_over = Number(turnover?.daily_turn_over || 0);
+            user.total_turn_over = Number(turnover?.total_turn_over || 0);
+        });
+    }
 
     return {
         team,
@@ -1157,8 +1208,10 @@ const promotion = async (req, res) => {
     }
 
     try {
-    const [user] = await connection.query('SELECT `phone`, `code`,`invite`, `roses_f`, `roses_f1`, `roses_today` FROM users WHERE `token` = ? ', [auth]);
-    const [level] = await connection.query('SELECT * FROM level');
+    const [[user], [level]] = await Promise.all([
+        connection.query('SELECT `phone`, `code`,`invite`, `roses_f`, `roses_f1`, `roses_today` FROM users WHERE `token` = ? ', [auth]),
+        connection.query('SELECT * FROM level'),
+    ]);
 
     if (!user || !user[0]) {
         return res.status(200).json({
@@ -1171,7 +1224,7 @@ const promotion = async (req, res) => {
     let userInfo = user[0];
     await ensureUserReferralCode(userInfo, auth);
     user[0].code = userInfo.code;
-    const referralTeam = await buildReferralTeam(userInfo, REFERRAL_MAX_LEVEL);
+    const referralTeam = await buildReferralTeam(userInfo, REFERRAL_MAX_LEVEL, { includeDetails: false });
 
     const teamCommission = formatMoney(userInfo.roses_f);
     const todayTeamCommission = formatMoney(userInfo.roses_today);
@@ -1257,8 +1310,6 @@ const listMyTeam = async (req, res) => {
     const referralTeam = await buildReferralTeam(userInfo, REFERRAL_MAX_LEVEL);
     const f1 = referralTeam.direct;
     const mem = referralTeam.direct.slice(0, 100);
-    const [total_roses] = await connection.query('SELECT `f1`,`invite`, `code`,`phone`,`time` FROM roses WHERE `invite` = ? ORDER BY id DESC LIMIT 100', [userInfo.code]);
-
     let newMem = [];
     mem.map((data) => {
         let objectMem = {
@@ -1274,7 +1325,6 @@ const listMyTeam = async (req, res) => {
         f1: referralTeam.team,
         f1_direct: f1,
         mem: newMem,
-        total_roses: total_roses,
         levels: referralTeam.levels.slice(1),
         max_level: REFERRAL_MAX_LEVEL,
         myTurnOver: 0,
@@ -1295,6 +1345,141 @@ const listMyTeam = async (req, res) => {
         });
     }
 
+}
+
+const listPromotionHistory = async (req, res) => {
+    const auth = req.cookies.auth;
+    if (!auth) {
+        return res.status(200).json({
+            message: 'Failed',
+            total_roses: [],
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+
+    try {
+        const [users] = await connection.query(
+            'SELECT `phone`, `code` FROM users WHERE `token` = ? LIMIT 1',
+            [auth]
+        );
+        if (!users || !users[0]) {
+            return res.status(200).json({
+                message: 'Failed',
+                total_roses: [],
+                status: false,
+                timeStamp: timeNow,
+            });
+        }
+
+        const userInfo = users[0];
+        await ensureUserReferralCode(userInfo, auth);
+        const [history] = await connection.query(
+            'SELECT `f1`, `invite`, `code`, `phone`, `time` FROM roses WHERE `invite` = ? ORDER BY id DESC LIMIT 100',
+            [userInfo.code]
+        );
+
+        return res.status(200).json({
+            message: 'Receive success',
+            total_roses: history || [],
+            status: true,
+            timeStamp: timeNow,
+        });
+    } catch (error) {
+        console.error('Promotion history load failed:', error);
+        return res.status(200).json({
+            message: 'Failed to load promotion history',
+            total_roses: [],
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+}
+
+const getPromotionMeta = async (req, res) => {
+    const auth = req.cookies.auth;
+    if (!auth) {
+        return res.status(200).json({
+            message: 'Failed',
+            info: [],
+            level: [],
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+
+    try {
+        const [[users], [levels]] = await Promise.all([
+            connection.query('SELECT `phone`, `code` FROM users WHERE `token` = ? LIMIT 1', [auth]),
+            connection.query('SELECT * FROM level'),
+        ]);
+        if (!users || !users[0]) {
+            return res.status(200).json({
+                message: 'Failed',
+                info: [],
+                level: levels || [],
+                status: false,
+                timeStamp: timeNow,
+            });
+        }
+
+        await ensureUserReferralCode(users[0], auth);
+        return res.status(200).json({
+            message: 'Receive success',
+            info: users,
+            level: levels || [],
+            status: true,
+            timeStamp: timeNow,
+        });
+    } catch (error) {
+        console.error('Promotion metadata load failed:', error);
+        return res.status(200).json({
+            message: 'Failed to load promotion data',
+            info: [],
+            level: [],
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+}
+
+const listDirectReferrals = async (req, res) => {
+    const auth = req.cookies.auth;
+    if (!auth) {
+        return res.status(200).json({ message: 'Failed', mem: [], status: false, timeStamp: timeNow });
+    }
+
+    try {
+        const [users] = await connection.query(
+            'SELECT `phone`, `code` FROM users WHERE `token` = ? LIMIT 1',
+            [auth]
+        );
+        if (!users || !users[0]) {
+            return res.status(200).json({ message: 'Failed', mem: [], status: false, timeStamp: timeNow });
+        }
+
+        const userInfo = users[0];
+        await ensureUserReferralCode(userInfo, auth);
+        const [members] = await connection.query(
+            'SELECT `id_user`, `phone`, `time` FROM users WHERE `invite` = ? ORDER BY id DESC LIMIT 100',
+            [userInfo.code]
+        );
+
+        return res.status(200).json({
+            message: 'Receive success',
+            mem: members || [],
+            status: true,
+            timeStamp: timeNow,
+        });
+    } catch (error) {
+        console.error('Direct referrals load failed:', error);
+        return res.status(200).json({
+            message: 'Failed to load referrals',
+            mem: [],
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
 }
 const wowpay = async (req, res) => {
     let auth = req.cookies.auth;
@@ -2387,6 +2572,9 @@ export default {
     withdrawFixedDeposit,
     callback_bank,
     listMyTeam,
+    listPromotionHistory,
+    getPromotionMeta,
+    listDirectReferrals,
     verifyCode,
     aviator,
     useRedenvelope,

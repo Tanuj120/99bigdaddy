@@ -262,11 +262,8 @@
                 `);
             }
             $.ajax({
-                type: "POST",
-                url: "/api/webapi/promotion",
-                data: {
-
-                },
+                type: "GET",
+                url: "/api/webapi/promotion/meta",
                 dataType: "json",
                 success: function (response) {
                     if (response.status === false) return location.href = '/home';

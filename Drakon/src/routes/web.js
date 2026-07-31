@@ -119,6 +119,9 @@ const initWebRouter = (app) => {
     router.post('/wowpay/create', middlewareController, userController.wowpay);
     router.post('/api/webapi/confirm_recharge', middlewareController, userController.confirmRecharge);
     router.get('/api/webapi/myTeam', middlewareController, userController.listMyTeam); // register
+    router.get('/api/webapi/promotion/history', middlewareController, userController.listPromotionHistory);
+    router.get('/api/webapi/promotion/meta', middlewareController, userController.getPromotionMeta);
+    router.get('/api/webapi/promotion/direct', middlewareController, userController.listDirectReferrals);
     router.get('/api/webapi/recharge/list', middlewareController, userController.listRecharge); // register
     router.get('/api/webapi/withdraw/list', middlewareController, userController.listWithdraw); // register
     router.post('/api/webapi/recharge/check', middlewareController, userController.recharge2); // register
