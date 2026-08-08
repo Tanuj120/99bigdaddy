@@ -158,7 +158,7 @@ async function ensureBootstrapReferrer(connection, userColumns, pointListColumns
     await ensurePointListRow(connection, pointListColumns, BOOTSTRAP_PHONE);
     return BOOTSTRAP_CODE;
   }
-
+ 
   await insertRow(connection, 'users', userColumns, {
     id_user: randomNumber(10000, 99999),
     phone: BOOTSTRAP_PHONE,
