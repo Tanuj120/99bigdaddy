@@ -12,7 +12,7 @@ const FIXED_DEPOSIT_PLANS = [
 ];
 const COPY_GAMING_AMOUNT_STEP = 500;
 const MINIMUM_DEPOSIT_AMOUNT = 500;
-const MINIMUM_WITHDRAW_AMOUNT = 1000;
+const MINIMUM_WITHDRAW_AMOUNT = 999;
 const DAY_IN_MS = 86400000;
 const LEVEL_INCOME_PERCENTAGES = [5, 3, 2, 1, 1, 1, 1, 1];
 const LEVEL_INCOME_PACKAGE_DAYS = 90;
@@ -1803,7 +1803,7 @@ const withdrawal3 = async (req, res) => {
     const password = String(req.body.password || '').trim();
     if (!auth || !Number.isFinite(money) || money < MINIMUM_WITHDRAW_AMOUNT || !password) {
         return res.status(200).json({
-            message: 'Minimum withdrawal amount is 1000',
+            message: 'Minimum withdrawal amount is 999',
             status: false,
             timeStamp: timeNow,
         });

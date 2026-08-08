@@ -7670,7 +7670,7 @@
                         <div data-v-25d9c352="" class="item c-row c-row-middle">
                             <div data-v-25d9c352="" class="m-r-10 van-image" style="width: 30px; height: 30px;"><img
                                     src="/images/king (8).png" class="van-image__img"></div>
-                            <div data-v-25d9c352="">5. Withdrawal Amount Range: <br>1000 - 1000000</div>
+                            <div data-v-25d9c352="">5. Withdrawal Amount Range: <br>999 - 1000000</div>
                         </div>
                     </div>
                 </div>
@@ -7758,8 +7758,8 @@
             }, 1000);
         }
 
-        const USDT_TO_INR_RATE = 98;
-        const minimumWithdrawInr = 1000;
+        const USDT_TO_INR_RATE = 100;
+        const minimumWithdrawInr = 999;
         const withdrawInrInput = $('#withdraw_amount_inr_input');
         const withdrawUsdtInput = $('#withdraw_amount_usdt_input');
         const withdrawNote = $('#withdraw_currency_note');
@@ -7770,7 +7770,7 @@
 
         function formatUsdt(value) {
             const amount = Number(value || 0);
-            return Number.isInteger(amount) ? String(amount) : amount.toFixed(2).replace(/\.?0+$/, '');
+            return amount.toFixed(2);
         }
 
         function formatInr(value) {
@@ -7778,7 +7778,7 @@
         }
 
         function setWithdrawNote() {
-            withdrawNote.text(`1 USDT = ₹${USDT_TO_INR_RATE}`);
+            withdrawNote.text(`1 USDT = ₹${USDT_TO_INR_RATE.toFixed(2)}`);
         }
 
         withdrawInrInput.on('input', function () {
@@ -7814,7 +7814,7 @@
                 return;
             }
             if (money < minimumWithdrawInr) {
-                alertMess('Minimum withdrawal amount is ₹1000', withdrawSubmitButton);
+                alertMess('Minimum withdrawal amount is ₹999', withdrawSubmitButton);
                 return;
             }
 

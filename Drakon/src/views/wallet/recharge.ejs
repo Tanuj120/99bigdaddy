@@ -338,7 +338,7 @@
         const inrToUsdt = (amount) => Number(amount || 0) / USDT_TO_INR_RATE
 
         const updateConversionNote = () => {
-            CurrencyConversionNote.textContent = `1 USDT = ₹${USDT_TO_INR_RATE}`
+            CurrencyConversionNote.textContent = `1 USDT = ₹${USDT_TO_INR_RATE.toFixed(2)}`
         }
 
         const bindQuickMoneyOptions = () => {
