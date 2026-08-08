@@ -13,6 +13,7 @@ const FIXED_DEPOSIT_PLANS = [
 const COPY_GAMING_AMOUNT_STEP = 500;
 const MINIMUM_DEPOSIT_AMOUNT = 500;
 const MINIMUM_WITHDRAW_AMOUNT = 999;
+const MAXIMUM_WITHDRAW_AMOUNT = 999999;
 const DAY_IN_MS = 86400000;
 const LEVEL_INCOME_PERCENTAGES = [5, 3, 2, 1, 1, 1, 1, 1];
 const LEVEL_INCOME_PACKAGE_DAYS = 90;
@@ -1804,6 +1805,13 @@ const withdrawal3 = async (req, res) => {
     if (!auth || !Number.isFinite(money) || money < MINIMUM_WITHDRAW_AMOUNT || !password) {
         return res.status(200).json({
             message: 'Minimum withdrawal amount is 999',
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+    if (money > MAXIMUM_WITHDRAW_AMOUNT) {
+        return res.status(200).json({
+            message: 'Maximum withdrawal amount is ₹9,99,999',
             status: false,
             timeStamp: timeNow,
         });
