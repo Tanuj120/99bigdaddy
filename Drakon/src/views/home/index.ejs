@@ -227,6 +227,38 @@
         }
       }
 
+      .noticeBar__container-body {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0;
+        margin-right: 0.16rem;
+        overflow: hidden !important;
+      }
+
+      .noticeBar__container-body-text {
+        display: inline-block !important;
+        width: max-content !important;
+        min-width: 100%;
+        max-width: none !important;
+        padding-left: 100%;
+        color: #ffffff !important;
+        line-height: 0.8rem !important;
+        white-space: nowrap;
+        word-break: normal !important;
+        overflow: visible !important;
+        animation: drakonAnnouncement 22s linear infinite !important;
+      }
+
+      @keyframes drakonAnnouncement {
+        from {
+          transform: translateX(0);
+        }
+
+        to {
+          transform: translateX(-100%);
+        }
+      }
+
       /* On smaller screens, decrease text size */
       @media only screen and (max-width: 300px) {
         .text {
@@ -3463,7 +3495,7 @@
               class="noticeBar__container-body-text"
               style="color: #ffffff !important"
             >
-              Welcome to DraKon (A unit of Kon World Games)
+              Good News - A 30 days staking (Starter- ₹100 Min) with daily payout rate 0.51% arriving on the floor in few days .
             </div>
           </div>
           <button data-v-2f7ed6fa="">
