@@ -11,7 +11,8 @@ const FIXED_DEPOSIT_PLANS = [
     { days: 90, dailyRate: 1.11 },
 ];
 const COPY_GAMING_AMOUNT_STEP = 500;
-const MINIMUM_DEPOSIT_AMOUNT = 500;
+const MINIMUM_DEPOSIT_AMOUNT = 100;
+const DEPOSIT_AMOUNT_STEP = 100;
 const MINIMUM_WITHDRAW_AMOUNT = 999;
 const MAXIMUM_WITHDRAW_AMOUNT = 999999;
 const DAY_IN_MS = 86400000;
@@ -1501,9 +1502,10 @@ const recharge = async (req, res) => {
     const minimumMoney = MINIMUM_DEPOSIT_AMOUNT
 
     if (type != 'cancel') {
-        if (!auth || !money || Number(money) < minimumMoney) {
+        const depositAmount = Number(money);
+        if (!auth || !Number.isFinite(depositAmount) || depositAmount < minimumMoney || !Number.isInteger(depositAmount / DEPOSIT_AMOUNT_STEP)) {
             return res.status(200).json({
-                message: 'Minimum deposit amount is 500',
+                message: 'Deposit amount must be 100 or above and in multiples of 100',
                 status: false,
                 timeStamp: timeNow,
             })

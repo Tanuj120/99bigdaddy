@@ -6,8 +6,9 @@ import querystring from "querystring"
 import QRCode from 'qrcode'
 
 let timeNow = Date.now();
-const MINIMUM_DEPOSIT_AMOUNT = 500;
-const MINIMUM_USD_DEPOSIT_AMOUNT = 5;
+const MINIMUM_DEPOSIT_AMOUNT = 100;
+const DEPOSIT_AMOUNT_STEP = 100;
+const MINIMUM_USD_DEPOSIT_AMOUNT = 1;
 const USDT_TO_INR_RATE = 100;
 const USDT_DECIMAL_PLACES = 8;
 const MAX_TRANSACTION_HASH_LENGTH = 191;
@@ -29,6 +30,19 @@ const normalizeUsdtAmount = (value) => {
 
 const convertUsdtToInr = (value) => {
     return Number((normalizeUsdtAmount(value) * USDT_TO_INR_RATE).toFixed(2));
+}
+
+const isValidInrDepositAmount = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+        && amount >= MINIMUM_DEPOSIT_AMOUNT
+        && Number.isInteger(amount / DEPOSIT_AMOUNT_STEP);
+}
+
+const isValidUsdtDepositAmount = (value) => {
+    const amount = normalizeUsdtAmount(value);
+    return amount >= MINIMUM_USD_DEPOSIT_AMOUNT
+        && isValidInrDepositAmount(convertUsdtToInr(amount));
 }
 
 const isValidTransactionHash = (hash) => {
@@ -102,7 +116,7 @@ const initiateManualUPIPayment = async (req, res) => {
 
     const amount = Number(query?.am);
 
-    if (!amount || amount < MINIMUM_DEPOSIT_AMOUNT) {
+    if (!isValidInrDepositAmount(amount)) {
         return res.redirect("/wallet/recharge");
     }
 
@@ -129,7 +143,7 @@ const initiateManualUSDTPayment = async (req, res) => {
 
         const amount = Number(query?.am);
 
-        if (!amount || amount < MINIMUM_USD_DEPOSIT_AMOUNT) {
+        if (!isValidUsdtDepositAmount(amount)) {
             return res.redirect("/wallet/recharge");
         }
 
@@ -150,14 +164,14 @@ const addManualUPIPaymentRequest = async (req, res) => {
     try {
         const data = req.body
         let auth = req.cookies.auth;
-        let money = parseInt(data.money);
+        let money = Number(data.money);
         let utr = normalizeTransactionHash(data.utr);
         const minimumMoneyAllowed = MINIMUM_DEPOSIT_AMOUNT
         const timeNow = new Date().toISOString();
 
-        if (!money || !(money >= minimumMoneyAllowed)) {
+        if (!isValidInrDepositAmount(money)) {
             return res.status(400).json({
-                message: `Money is Required and it should be ₹${minimumMoneyAllowed} or above!`,
+                message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
                 status: false,
                 timeStamp: timeNow,
             })
@@ -238,9 +252,9 @@ const addManualUSDTPaymentRequest = async (req, res) => {
         const today = moment().format("YYYY-MM-DD");
         const createdAt = moment().format("YYYY-MM-DD HH:mm:ss");
 
-        if (!money_usdt || !(money_usdt >= minimumMoneyAllowed)) {
+        if (!isValidUsdtDepositAmount(money_usdt)) {
             return res.status(400).json({
-                message: `Money is Required and it should be $${minimumMoneyAllowed} or above!`,
+                message: `Deposit amount must be $${minimumMoneyAllowed} or above in whole USDT amounts`,
                 status: false,
                 timeStamp: timeNow,
             })
@@ -403,14 +417,14 @@ const addManualUSDTPaymentRequest = async (req, res) => {
 const initiateUPIPayment = async (req, res) => {
     const type = PaymentMethodsMap.UPI_GATEWAY;
     let auth = req.cookies.auth;
-    let money = parseInt(req.body.money);
+    let money = Number(req.body.money);
     const timeNow = new Date().toISOString();
 
     const minimumMoneyAllowed = MINIMUM_DEPOSIT_AMOUNT;
 
-    if (!money || !(money >= minimumMoneyAllowed)) {
+    if (!isValidInrDepositAmount(money)) {
         return res.status(400).json({
-            message: `Money is required and it should be ₹${minimumMoneyAllowed} or above!`,
+            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
             status: false,
             timeStamp: timeNow,
         });
@@ -603,13 +617,13 @@ const verifyUPIPayment = async (req, res) => {
 const initiateWowPayPayment = async (req, res) => {
     const type = PaymentMethodsMap.WOW_PAY
     let auth = req.cookies.auth;
-    let money = parseInt(req.query.money);
+    let money = Number(req.query.money);
 
     const minimumMoneyAllowed = MINIMUM_DEPOSIT_AMOUNT
 
-    if (!money || !(money >= minimumMoneyAllowed)) {
+    if (!isValidInrDepositAmount(money)) {
         return res.status(400).json({
-            message: `Money is Required and it should be ₹${minimumMoneyAllowed} or above!`,
+            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
             status: false,
             timeStamp: timeNow,
         })

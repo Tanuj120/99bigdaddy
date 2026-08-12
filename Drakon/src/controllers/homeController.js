@@ -53,7 +53,7 @@ const walletPage = async (req, res) => {
 
 const rechargePage = async (req, res) => {
     return res.render("wallet/recharge.ejs", {
-        MinimumMoney: 500
+        MinimumMoney: 100
     });
 }
 
