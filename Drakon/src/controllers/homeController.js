@@ -350,10 +350,11 @@ const getSalaryRecord = async (req, res) => {
         getPhoneFilter(user.phone, 'to_phone').params
     );
     referralIncome.forEach((item) => {
+        const planDays = Number(String(item.transaction_id || '').match(/^COPY_GAMING_(\d+)_/)?.[1] || 0);
         addTransaction(records, {
             id: `level-income-${item.id || item.transaction_id}`,
             title: `Level ${item.level_no} Income`,
-            type: 'Copy Gaming Commission',
+            type: planDays ? `${planDays} Days Copy Gaming Commission` : 'Copy Gaming Commission',
             amount: item.income_amount,
             direction: 'credit',
             status: getStatusLabel(item.status),

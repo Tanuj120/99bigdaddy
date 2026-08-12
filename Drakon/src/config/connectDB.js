@@ -177,6 +177,20 @@ const createMockConnection = () => {
     } else if (/where\s+`?code`?\s*=\s*\?/i.test(sql)) {
       const [code] = params;
       rows = users.filter((user) => user.code === code);
+    } else if (/where\s+`?invite`?\s+in\s*\(/i.test(sql)) {
+      const inviteCodes = new Set(params.map((value) => String(value || "")));
+      rows = users.filter((user) => inviteCodes.has(String(user.invite || "")));
+      if (/count\(\*\)\s+as\s+invite_count/i.test(sql) && /group\s+by\s+`?invite`?/i.test(sql)) {
+        const grouped = new Map();
+        rows.forEach((user) => {
+          const invite = String(user.invite || "");
+          grouped.set(invite, (grouped.get(invite) || 0) + 1);
+        });
+        return [...grouped.entries()].map(([invite, inviteCount]) => ({
+          invite,
+          invite_count: inviteCount,
+        }));
+      }
     } else if (/where\s+`?invite`?\s*=\s*\?/i.test(sql)) {
       const [invite] = params;
       rows = users.filter((user) => user.invite === invite);
@@ -316,6 +330,22 @@ const createMockConnection = () => {
       }
       return [{ affectedRows: row ? 1 : 0 }, []];
     }
+    if (/set\s+status\s*=\s*\?,\s*withdrawn_time\s*=\s*\?,\s*total_interest\s*=\s*\?,\s*maturity_amount\s*=\s*\?,\s*maturity_time\s*=\s*\?/i.test(sql)) {
+      const [status, withdrawnTime, totalInterest, maturityAmount, maturityTime, id, phone, excludedStatus] = params;
+      const row = fixedDeposits.find((entry) => (
+        Number(entry.id) === Number(id) &&
+        phoneMatches(entry.phone, phone) &&
+        entry.status !== excludedStatus
+      ));
+      if (row) {
+        row.status = status;
+        row.withdrawn_time = withdrawnTime;
+        row.total_interest = totalInterest;
+        row.maturity_amount = maturityAmount;
+        row.maturity_time = maturityTime;
+      }
+      return [{ affectedRows: row ? 1 : 0 }, []];
+    }
     if (/set\s+status\s*=\s*\?,\s*withdrawn_time\s*=\s*\?\s+where\s+id\s*=\s*\?/i.test(sql)) {
       const [status, withdrawnTime, id] = params;
       const row = fixedDeposits.find((entry) => Number(entry.id) === Number(id));
@@ -434,6 +464,11 @@ const createMockConnection = () => {
     if (/where\s+from_phone\s*=\s*\?/i.test(sql)) {
       const [fromPhone] = params;
       return referralLevelIncome.filter((row) => phoneMatches(row.from_phone, fromPhone));
+    }
+    if (/\bto_phone\b\s*=\s*\?/i.test(sql)) {
+      return referralLevelIncome.filter((row) => (
+        params.some((phone) => phoneMatches(row.to_phone, phone))
+      ));
     }
     return referralLevelIncome;
   };

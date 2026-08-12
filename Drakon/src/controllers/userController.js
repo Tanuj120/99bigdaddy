@@ -8,16 +8,15 @@ import axios from 'axios';
 let timeNow = Date.now();
 
 const FIXED_DEPOSIT_PLANS = [
-    { days: 90, dailyRate: 1.11 },
+    { days: 30, dailyRate: 0.51, levelPercentages: [1, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25] },
+    { days: 90, dailyRate: 1.11, levelPercentages: [5, 3, 2, 1, 1, 1, 1, 1] },
 ];
-const COPY_GAMING_AMOUNT_STEP = 500;
+const COPY_GAMING_AMOUNT_STEP = 100;
 const MINIMUM_DEPOSIT_AMOUNT = 100;
 const DEPOSIT_AMOUNT_STEP = 100;
 const MINIMUM_WITHDRAW_AMOUNT = 999;
 const MAXIMUM_WITHDRAW_AMOUNT = 999999;
 const DAY_IN_MS = 86400000;
-const LEVEL_INCOME_PERCENTAGES = [5, 3, 2, 1, 1, 1, 1, 1];
-const LEVEL_INCOME_PACKAGE_DAYS = 90;
 const REFERRAL_MAX_LEVEL = 8;
 const REFERRAL_QUERY_CHUNK_SIZE = 500;
 
@@ -89,7 +88,8 @@ const calculateCopyGamingValues = (source = {}) => {
     const storedTenureDays = Number(source.tenure_days ?? source.tenureDays ?? source.days ?? 0);
     const plan = getFixedDepositPlan(storedTenureDays);
     const tenureDays = Number(plan?.days || storedTenureDays || 0);
-    const dailyRate = formatMoney(plan?.dailyRate ?? source.daily_rate ?? source.dailyRate ?? 0);
+    const storedDailyRate = source.daily_rate ?? source.dailyRate;
+    const dailyRate = formatMoney(storedDailyRate ?? plan?.dailyRate ?? 0);
     const startTime = Number(source.start_time ?? source.startTime ?? source.created_at ?? source.createdAt ?? 0);
     const storedMaturityTime = Number(source.maturity_time ?? source.maturityTime ?? 0);
     const maturityTime = startTime && tenureDays ? startTime + (tenureDays * DAY_IN_MS) : storedMaturityTime;
@@ -198,8 +198,11 @@ const getTransactionClient = async () => {
     };
 }
 
-const distributeCopyGamingLevelIncome = async (db, { buyer, amount, fixedDepositId, transactionId }) => {
+const distributeCopyGamingLevelIncome = async (db, { buyer, amount, fixedDepositId, transactionId, levelPercentages }) => {
     const credited = [];
+    if (!Array.isArray(levelPercentages) || levelPercentages.length !== REFERRAL_MAX_LEVEL) {
+        throw new Error('Invalid Copy Gaming referral configuration');
+    }
     const [existingRows] = await db.query(
         'SELECT COUNT(*) AS count FROM referral_level_income WHERE transaction_id = ?',
         [transactionId]
@@ -213,7 +216,7 @@ const distributeCopyGamingLevelIncome = async (db, { buyer, amount, fixedDeposit
     const visitedCodes = new Set([buyerCode].filter(Boolean));
     const visitedPhones = new Set([String(buyer.phone || '')].filter(Boolean));
 
-    for (let index = 0; index < LEVEL_INCOME_PERCENTAGES.length; index++) {
+    for (let index = 0; index < levelPercentages.length; index++) {
         if (!referralCode || visitedCodes.has(referralCode)) break;
 
         const [referrerRows] = await db.query(
@@ -235,7 +238,7 @@ const distributeCopyGamingLevelIncome = async (db, { buyer, amount, fixedDeposit
         const isActiveUser = Number(referrer.status) === 1 && Number(referrer.veri) === 1;
         if (isActiveUser) {
             const levelNo = index + 1;
-            const percentage = LEVEL_INCOME_PERCENTAGES[index];
+            const percentage = Number(levelPercentages[index]);
             const incomeAmount = formatMoney((amount * percentage) / 100);
             if (incomeAmount > 0) {
                 const [insertResult] = await db.execute(
@@ -246,10 +249,13 @@ const distributeCopyGamingLevelIncome = async (db, { buyer, amount, fixedDeposit
                 );
 
                 if (insertResult.affectedRows > 0) {
-                    await db.execute(
+                    const [creditResult] = await db.execute(
                         'UPDATE users SET money = money + ?, roses_f = roses_f + ?, roses_f1 = roses_f1 + ?, roses_today = roses_today + ? WHERE phone = ? AND status = 1 AND veri = 1',
                         [incomeAmount, incomeAmount, 0, incomeAmount, referrerPhone]
                     );
+                    if (!creditResult.affectedRows) {
+                        throw new Error(`Failed to credit Copy Gaming level ${levelNo} income`);
+                    }
                     credited.push({ level: levelNo, phone: referrerPhone, amount: incomeAmount, percentage });
                 }
             }
@@ -670,9 +676,9 @@ const createFixedDeposit = async (req, res) => {
         });
     }
 
-    if (amount % COPY_GAMING_AMOUNT_STEP !== 0) {
+    if (!Number.isFinite(amount) || !Number.isInteger(amount / COPY_GAMING_AMOUNT_STEP)) {
         return res.status(200).json({
-            message: 'Amount must be in multiples of 500',
+            message: 'Amount must be in multiples of 100',
             status: false,
             timeStamp: timeNow,
         });
@@ -740,13 +746,14 @@ const createFixedDeposit = async (req, res) => {
             );
             fixedDepositId = insertResult.insertId;
 
-            if (Number(plan.days) === LEVEL_INCOME_PACKAGE_DAYS && fixedDepositId) {
-                const referralTransactionId = `COPY_GAMING_${LEVEL_INCOME_PACKAGE_DAYS}_${fixedDepositId}`;
+            if (Array.isArray(plan.levelPercentages) && fixedDepositId) {
+                const referralTransactionId = `COPY_GAMING_${plan.days}_${fixedDepositId}`;
                 creditedReferralIncome = await distributeCopyGamingLevelIncome(transaction.db, {
                     buyer: user,
                     amount,
                     fixedDepositId,
                     transactionId: referralTransactionId,
+                    levelPercentages: plan.levelPercentages,
                 });
                 await transaction.db.execute(
                     'UPDATE fixed_deposits SET referral_transaction_id = ?, referral_processed = ? WHERE id = ? AND phone = ?',
@@ -797,65 +804,77 @@ const withdrawFixedDeposit = async (req, res) => {
         }
 
         await ensureFixedDepositsTable();
-        const [rows] = await connection.query(
-            'SELECT * FROM fixed_deposits WHERE id = ? AND phone = ? LIMIT 1',
-            [depositId, user.phone]
-        );
-
-        if (!rows || rows.length === 0) {
-            return res.status(200).json({
-                message: 'Copy Gaming not found',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
-
-        const fd = rows[0];
-        if (fd.status === 'withdrawn') {
-            return res.status(200).json({
-                message: 'Copy Gaming already withdrawn',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
-
-        const {
-            maturityTime,
-            maturityAmount,
-            totalInterest,
-        } = calculateCopyGamingValues(fd);
-
-        if (maturityTime > Date.now()) {
-            return res.status(200).json({
-                message: 'You can withdraw this Copy Gaming only after maturity',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
-
-        const payoutAmount = formatMoney(maturityAmount);
-        const now = Date.now();
-
-        const [withdrawResult] = await connection.execute(
-            'UPDATE fixed_deposits SET status = ?, withdrawn_time = ?, total_interest = ?, maturity_amount = ?, maturity_time = ? WHERE id = ? AND phone = ? AND status != ?',
-            ['withdrawn', now, totalInterest, payoutAmount, maturityTime, depositId, user.phone, 'withdrawn']
-        );
-        if (!withdrawResult.affectedRows) {
-            return res.status(200).json({
-                message: 'Copy Gaming already withdrawn',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
-
+        const transaction = await getTransactionClient();
         try {
-            await connection.execute('UPDATE users SET money = money + ? WHERE token = ?', [payoutAmount, auth]);
-        } catch (creditError) {
-            await connection.execute(
-                'UPDATE fixed_deposits SET status = ?, withdrawn_time = ? WHERE id = ? AND phone = ?',
-                ['active', 0, depositId, user.phone]
+            await transaction.begin();
+            const [rows] = await transaction.db.query(
+                'SELECT * FROM fixed_deposits WHERE id = ? AND phone = ? LIMIT 1 FOR UPDATE',
+                [depositId, user.phone]
             );
-            throw creditError;
+
+            if (!rows || rows.length === 0) {
+                await transaction.rollback();
+                return res.status(200).json({
+                    message: 'Copy Gaming not found',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+
+            const fixedDeposit = rows[0];
+            if (fixedDeposit.status === 'withdrawn') {
+                await transaction.rollback();
+                return res.status(200).json({
+                    message: 'Copy Gaming already withdrawn',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+
+            const {
+                maturityTime,
+                maturityAmount,
+                totalInterest,
+            } = calculateCopyGamingValues(fixedDeposit);
+
+            if (maturityTime > Date.now()) {
+                await transaction.rollback();
+                return res.status(200).json({
+                    message: 'You can withdraw this Copy Gaming only after maturity',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+
+            const payoutAmount = formatMoney(maturityAmount);
+            const now = Date.now();
+            const [withdrawResult] = await transaction.db.execute(
+                'UPDATE fixed_deposits SET status = ?, withdrawn_time = ?, total_interest = ?, maturity_amount = ?, maturity_time = ? WHERE id = ? AND phone = ? AND status != ?',
+                ['withdrawn', now, totalInterest, payoutAmount, maturityTime, depositId, user.phone, 'withdrawn']
+            );
+            if (!withdrawResult.affectedRows) {
+                await transaction.rollback();
+                return res.status(200).json({
+                    message: 'Copy Gaming already withdrawn',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+
+            const [creditResult] = await transaction.db.execute(
+                'UPDATE users SET money = money + ? WHERE token = ?',
+                [payoutAmount, auth]
+            );
+            if (!creditResult.affectedRows) {
+                throw new Error('Failed to credit Copy Gaming maturity amount');
+            }
+
+            await transaction.commit();
+        } catch (transactionError) {
+            await transaction.rollback();
+            throw transactionError;
+        } finally {
+            transaction.release();
         }
 
         return res.status(200).json({
@@ -1376,10 +1395,36 @@ const listPromotionHistory = async (req, res) => {
 
         const userInfo = users[0];
         await ensureUserReferralCode(userInfo, auth);
-        const [history] = await connection.query(
-            'SELECT `f1`, `invite`, `code`, `phone`, `time` FROM roses WHERE `invite` = ? ORDER BY id DESC LIMIT 100',
-            [userInfo.code]
-        );
+        await ensureCopyGamingReferralSchema();
+        const [[copyGamingHistory], [legacyHistory]] = await Promise.all([
+            connection.query(
+                `SELECT transaction_id, from_phone, from_code, level_no, percentage, package_amount, income_amount, status, created_at
+                FROM referral_level_income WHERE to_phone = ? ORDER BY id DESC LIMIT 100`,
+                [userInfo.phone]
+            ),
+            connection.query(
+                'SELECT `f1`, `invite`, `code`, `phone`, `time` FROM roses WHERE `invite` = ? ORDER BY id DESC LIMIT 100',
+                [userInfo.code]
+            ),
+        ]);
+        const mappedCopyGamingHistory = (copyGamingHistory || []).map((item) => {
+            const planDays = Number(String(item.transaction_id || '').match(/^COPY_GAMING_(\d+)_/)?.[1] || 0);
+            return {
+                f1: formatMoney(item.income_amount),
+                invite: item.from_code,
+                code: planDays ? `${planDays} Days - Level ${item.level_no}` : `Level ${item.level_no}`,
+                phone: item.from_phone,
+                time: item.created_at,
+                level_no: Number(item.level_no),
+                percentage: Number(item.percentage),
+                package_amount: formatMoney(item.package_amount),
+                transaction_id: item.transaction_id,
+                status: item.status,
+            };
+        });
+        const history = [...mappedCopyGamingHistory, ...(legacyHistory || [])]
+            .sort((left, right) => Number(right.time || 0) - Number(left.time || 0))
+            .slice(0, 100);
 
         return res.status(200).json({
             message: 'Receive success',
@@ -2558,6 +2603,12 @@ const updateRecharge = async (req, res) => {
 
 
 }
+
+export {
+    FIXED_DEPOSIT_PLANS,
+    calculateCopyGamingValues,
+    distributeCopyGamingLevelIncome,
+};
 
 
 export default {

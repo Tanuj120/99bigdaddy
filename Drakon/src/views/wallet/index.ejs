@@ -237,6 +237,26 @@
             box-shadow: 0 6px 18px rgba(240, 139, 109, 0.16);
         }
 
+        .plan-card.plan-30 {
+            border-color: #315f8a;
+            background: linear-gradient(135deg, #173652, #245d8c);
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(23, 54, 82, 0.24);
+        }
+
+        .plan-card.plan-30.active {
+            border-color: #79c7ff;
+            box-shadow: 0 0 0 2px rgba(121, 199, 255, 0.34), 0 8px 22px rgba(23, 54, 82, 0.3);
+        }
+
+        .plan-card.plan-30 .plan-rate {
+            color: #9dd8ff;
+        }
+
+        .plan-card.plan-30 .plan-note {
+            color: #d8edff;
+        }
+
         .plan-top {
             display: flex;
             justify-content: space-between;
@@ -446,7 +466,7 @@
                     <h2 class="section-title">Copy Gaming</h2>
                     <div class="plan-list" id="fdPlans"></div>
                     <div class="deposit-form">
-                        <input id="fdAmount" class="amount-input" type="number" min="500" step="500" placeholder="Enter amount to transfer in">
+                        <input id="fdAmount" class="amount-input" type="number" min="100" step="100" placeholder="Enter amount in multiples of 100">
                         <button class="action-button primary" id="fdCreateButton">Confirm</button>
                     </div>
                 </div>
@@ -488,7 +508,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
-        let selectedFdPlan = 90;
+        let selectedFdPlan = 30;
         let latestFixedDepositSummary = null;
 
         function formatMoney(value) {
@@ -505,18 +525,20 @@
         }
 
         const defaultCopyGamingPlans = [
+            { days: 30, dailyRate: 0.51 },
             { days: 90, dailyRate: 1.11 }
         ];
 
         function getCopyGamingPlans(plans) {
             const availablePlans = Array.isArray(plans) && plans.length ? plans : defaultCopyGamingPlans;
-            const ninetyDayPlans = availablePlans.filter((plan) => Number(plan.days) === 90);
-            return ninetyDayPlans.length ? ninetyDayPlans : defaultCopyGamingPlans;
+            return availablePlans
+                .filter((plan) => [30, 90].includes(Number(plan.days)))
+                .sort((first, second) => Number(first.days) - Number(second.days));
         }
 
         function renderPlans(plans) {
             const html = getCopyGamingPlans(plans).map((plan) => `
-                <div class="plan-card ${Number(plan.days) === Number(selectedFdPlan) ? 'active' : ''}" data-days="${plan.days}">
+                <div class="plan-card plan-${Number(plan.days)} ${Number(plan.days) === Number(selectedFdPlan) ? 'active' : ''}" data-days="${plan.days}">
                     <div class="plan-top">
                         <span>${plan.days} days Staking</span>
                         <span class="plan-rate">${Number(plan.dailyRate).toFixed(2)}% daily</span>
@@ -546,6 +568,10 @@
                 return `
                     <div class="record-card">
                         <div class="record-tag ${tagClass}">${tagLabel}</div>
+                        <div class="record-row">
+                            <span class="label">Plan</span>
+                            <span class="value">${Number(item.tenureDays)} days Staking</span>
+                        </div>
                         <div class="record-row">
                             <span class="label">Amount</span>
                             <span class="value ${isWithdrawn ? 'orange' : 'orange'}">${isWithdrawn ? '-' : '+'}${formatMoney(item.amount)}</span>
@@ -605,6 +631,7 @@
                     }
                     renderSummary(response.fixedDeposit || {
                         plans: [
+                            { days: 30, dailyRate: 0.51 },
                             { days: 90, dailyRate: 1.11 }
                         ],
                         active: [],
@@ -627,8 +654,8 @@
                 notify('Please enter a valid amount.');
                 return;
             }
-            if (amount % 500 !== 0) {
-                notify('Amount must be in multiples of 500.');
+            if (!Number.isInteger(amount / 100)) {
+                notify('Amount must be in multiples of 100.');
                 return;
             }
 
