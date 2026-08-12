@@ -740,10 +740,10 @@
         }
 
         $(document).on('click', '.plan-card', function () {
-            selectedFdPlan = Number($(this).data('days'));
-            if (latestFixedDepositSummary) {
-                loadWallet();
-            }
+            const selectedCard = $(this);
+            selectedFdPlan = Number(selectedCard.data('days'));
+            $('.plan-card').removeClass('active').attr('aria-selected', 'false');
+            selectedCard.addClass('active').attr('aria-selected', 'true');
         });
 
         $('#fdCreateButton').on('click', createFd);
