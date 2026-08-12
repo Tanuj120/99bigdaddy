@@ -230,6 +230,8 @@
             padding: 14px;
             background: #fffdf7;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
 
         .plan-card.active {
@@ -238,23 +240,60 @@
         }
 
         .plan-card.plan-30 {
-            border-color: #315f8a;
-            background: linear-gradient(135deg, #173652, #245d8c);
+            border: 2px solid #52b8f5;
+            background:
+                radial-gradient(circle at 92% 14%, rgba(119, 211, 255, 0.26), transparent 27%),
+                radial-gradient(circle at 8% 92%, rgba(48, 142, 211, 0.28), transparent 32%),
+                linear-gradient(135deg, #173d62 0%, #1f5f91 55%, #267eb2 100%);
             color: #ffffff;
-            box-shadow: 0 8px 20px rgba(23, 54, 82, 0.24);
+            box-shadow: 0 9px 22px rgba(23, 72, 112, 0.28);
         }
 
         .plan-card.plan-30.active {
-            border-color: #79c7ff;
-            box-shadow: 0 0 0 2px rgba(121, 199, 255, 0.34), 0 8px 22px rgba(23, 54, 82, 0.3);
+            border-color: #8edaff;
+            box-shadow: 0 0 0 3px rgba(105, 199, 252, 0.28), 0 10px 24px rgba(23, 72, 112, 0.34);
+        }
+
+        .plan-card.plan-30 .plan-name {
+            color: #fff1a6;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0.2px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.42);
         }
 
         .plan-card.plan-30 .plan-rate {
-            color: #9dd8ff;
+            color: #c8efff;
+            font-weight: 900;
         }
 
         .plan-card.plan-30 .plan-note {
-            color: #d8edff;
+            color: #eef8ff;
+        }
+
+        .plan-card.plan-90 {
+            border: 1px solid #78bdf0;
+            background: linear-gradient(135deg, #e8f5ff 0%, #d7edff 58%, #c9e6fb 100%);
+            color: #142d46;
+            box-shadow: 0 7px 18px rgba(75, 151, 207, 0.16);
+        }
+
+        .plan-card.plan-90.active {
+            border-color: #258ee0;
+            box-shadow: 0 0 0 2px rgba(37, 142, 224, 0.2), 0 8px 20px rgba(75, 151, 207, 0.22);
+        }
+
+        .plan-card.plan-90 .plan-name {
+            color: #163b5d;
+            font-weight: 800;
+        }
+
+        .plan-card.plan-90 .plan-rate {
+            color: #197ed0;
+        }
+
+        .plan-card.plan-90 .plan-note {
+            color: #35536d;
         }
 
         .plan-top {
@@ -540,7 +579,7 @@
             const html = getCopyGamingPlans(plans).map((plan) => `
                 <div class="plan-card plan-${Number(plan.days)} ${Number(plan.days) === Number(selectedFdPlan) ? 'active' : ''}" data-days="${plan.days}">
                     <div class="plan-top">
-                        <span>${plan.days} days Staking</span>
+                        <span class="plan-name">${plan.days} days Staking</span>
                         <span class="plan-rate">${Number(plan.dailyRate).toFixed(2)}% daily</span>
                     </div>
                     <div class="plan-note">Withdraw only after ${plan.days} full days Staking. Daily payout rate is ${Number(plan.dailyRate).toFixed(2)}%.</div>
