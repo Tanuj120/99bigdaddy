@@ -140,7 +140,7 @@
             <p class="subtitle">Confirm your account password before saving your new email address.</p>
             <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
 
-            <form id="changeEmailForm" novalidate>
+            <form id="changeEmailForm" autocomplete="off" novalidate>
                 <div class="field">
                     <label for="oldEmail">Old Email</label>
                     <input id="oldEmail" name="oldEmail" type="email" value="<%= currentEmail %>"
@@ -149,17 +149,20 @@
                 <div class="field">
                     <label for="newEmail">New Email</label>
                     <input id="newEmail" name="newEmail" type="email" maxlength="191"
-                        placeholder="Enter your new email" autocomplete="email" required>
+                        placeholder="Enter your new email" autocomplete="off" inputmode="email"
+                        autocapitalize="none" spellcheck="false" data-lpignore="true" data-1p-ignore required>
                 </div>
                 <div class="field">
                     <label for="confirmEmail">Confirm New Email</label>
                     <input id="confirmEmail" name="confirmEmail" type="email" maxlength="191"
-                        placeholder="Re-enter your new email" autocomplete="email" required>
+                        placeholder="Re-enter your new email" autocomplete="off" inputmode="email"
+                        autocapitalize="none" spellcheck="false" data-lpignore="true" data-1p-ignore required>
                 </div>
                 <div class="field">
                     <label for="password">Password</label>
                     <input id="password" name="password" type="password"
-                        placeholder="Enter your account password" autocomplete="current-password" required>
+                        placeholder="Enter your account password" autocomplete="off"
+                        data-lpignore="true" data-1p-ignore required>
                 </div>
                 <button id="submitButton" class="submit-button" type="submit">Update Email</button>
             </form>
@@ -170,6 +173,22 @@
         const form = document.getElementById('changeEmailForm');
         const submitButton = document.getElementById('submitButton');
         const messageBox = document.getElementById('formMessage');
+        const newEmailInput = document.getElementById('newEmail');
+        const confirmEmailInput = document.getElementById('confirmEmail');
+
+        function clearPhoneAutofill() {
+            [newEmailInput, confirmEmailInput].forEach((input) => {
+                if (/^\+?[\d\s()-]{8,}$/.test(input.value.trim())) {
+                    input.value = '';
+                }
+            });
+        }
+
+        clearPhoneAutofill();
+        window.addEventListener('pageshow', clearPhoneAutofill);
+        [50, 250, 750].forEach((delay) => setTimeout(clearPhoneAutofill, delay));
+        newEmailInput.addEventListener('focus', clearPhoneAutofill);
+        confirmEmailInput.addEventListener('focus', clearPhoneAutofill);
 
         function showMessage(message, type) {
             messageBox.textContent = message;

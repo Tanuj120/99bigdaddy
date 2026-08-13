@@ -55,9 +55,9 @@
         }
 
         .profile-entry {
-            top: .32rem;
-            min-height: 2.05rem;
-            padding: .22rem .28rem;
+            top: .28rem;
+            min-height: 2.45rem;
+            padding: .28rem .34rem;
             border: .02667rem solid rgba(38, 143, 232, .35);
             border-radius: .32rem;
             background: rgba(255, 255, 255, .94);
@@ -77,7 +77,9 @@
         }
 
         .profile-entry .profile.profile-cta {
-            position: static !important;
+            position: absolute !important;
+            top: .24rem;
+            right: .28rem !important;
             display: flex;
             align-items: center;
             gap: .12rem;
@@ -93,6 +95,31 @@
 
         .profile-entry .profile.profile-cta i {
             color: #147dca !important;
+        }
+
+        .profile-entry > .c-row:first-child {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .profile-entry .infoName {
+            min-width: 0;
+        }
+
+        .profile-entry .infoName .number {
+            height: auto !important;
+            line-height: 1.35 !important;
+            white-space: nowrap;
+        }
+
+        .mian .menu-box .info {
+            height: 4.95rem !important;
+            padding-left: .4rem !important;
+            padding-right: .4rem !important;
+        }
+
+        .mian .menu-box .total-box {
+            margin: -1.18rem .4rem .4rem !important;
         }
     </style>
 </head>
