@@ -16,6 +16,58 @@
 	<link rel="stylesheet" href="./index_files/page-login-ef3d1f88.css">
 	<link rel="stylesheet" href="./index_files/index-676568a8.css">
 	<link rel="stylesheet" href="./index_files/page-main-ff2e7571.css">
+	<style>
+		.support-message-card {
+			margin: .4rem;
+			padding: .48rem;
+			color: #172238;
+			font-size: .36rem;
+			line-height: 1.55;
+			white-space: normal;
+			background: #fff;
+			border: .02667rem solid #cfe6fa;
+			border-radius: .32rem;
+			box-shadow: 0 .12rem .32rem rgba(38, 116, 179, .12);
+		}
+
+		.support-message-card p {
+			margin: 0 0 .36rem;
+		}
+
+		.support-message-card p:last-child {
+			margin-bottom: 0;
+		}
+
+		.support-email {
+			display: block;
+			margin: .16rem 0 .4rem;
+			color: #2189db;
+			font-size: .38rem;
+			font-weight: 700;
+			text-decoration: none;
+			word-break: break-word;
+		}
+
+		.support-details {
+			margin: 0 0 .4rem;
+			padding: .32rem .36rem;
+			list-style: none;
+			background: #edf7ff;
+			border-radius: .24rem;
+		}
+
+		.support-details li {
+			position: relative;
+			padding: .1rem 0 .1rem .42rem;
+		}
+
+		.support-details li::before {
+			position: absolute;
+			left: 0;
+			color: #d5a63d;
+			content: "•";
+		}
+	</style>
 </head>
 
 <body style="font-size: 12px;">
@@ -1556,27 +1608,21 @@
 						src="./index_files/customerBg-1f590d5d.png"></div>
 			</div>
 			<div data-v-6a5413fb="" data-v-28fadbec="" class="content">
-				<div data-v-6a5413fb="">
-
-					<a href="https://tawk.to/chat/65c8fe398d261e1b5f5ecbfd/1hmci259a">
-						<div data-v-6a5413fb="" class="content-item">
-							<div data-v-6a5413fb="" class="content-item-title"><img data-v-6a5413fb="" alt="" class=""
-									data-origin="https://www.bigdaddygame2.com/assets/png/CStype3-7588d980.png"
-									src="./index_files/CStype3-7588d980.png"><span data-v-6a5413fb="">LiveChat</span>
-							</div><i data-v-6a5413fb="" class="van-badge__wrapper van-icon van-icon-arrow"
-								style="color: rgb(168, 168, 168); font-size: 18px;"></i>
-						</div>
+				<section class="support-message-card" aria-label="Customer support instructions">
+					<p><strong>Forgot your password or need help with anything else?</strong></p>
+					<p>Our support team is here to assist you. Please send your query or concern to:</p>
+					<a class="support-email" href="mailto:support.konworldgames@gmail.com">
+						support.konworldgames@gmail.com
 					</a>
-
-					<div data-v-6a5413fb="" class="content-item" onclick="location.href='<%=telegram%>'">
-						<div data-v-6a5413fb="" class="content-item-title"><img data-v-6a5413fb="" alt="" class=""
-								data-origin="https://www.bigdaddygame2.com/assets/png/CStype3-7588d980.png"
-								src="/images/icon_Telegram.webp"><span data-v-6a5413fb="">Telegram</span></div><i
-							data-v-6a5413fb="" class="van-badge__wrapper van-icon van-icon-arrow"
-							style="color: rgb(168, 168, 168); font-size: 18px;"></i>
-					</div>
-
-				</div>
+					<p>For security and account verification purposes, please include the following details in your email:</p>
+					<ul class="support-details">
+						<li><strong>UID (User ID)</strong></li>
+						<li><strong>Username</strong></li>
+						<li><strong>Registered Gmail / Email Address</strong></li>
+						<li><strong>Brief description of your issue</strong></li>
+					</ul>
+					<p>Providing these details will help us verify your account and assist you faster.</p>
+				</section>
 			</div>
 		</div>
 		<div class="customer" id="customerId"

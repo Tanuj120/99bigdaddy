@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `id_user` VARCHAR(32) DEFAULT NULL,
   `phone` VARCHAR(20) NOT NULL,
+  `email` VARCHAR(191) DEFAULT NULL,
   `name_user` VARCHAR(191) DEFAULT NULL,
   `password` VARCHAR(255) DEFAULT NULL,
   `plain_password` VARCHAR(255) DEFAULT NULL,
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `time` BIGINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_users_phone` (`phone`),
+  UNIQUE KEY `uq_users_email` (`email`),
   KEY `idx_users_code` (`code`),
   KEY `idx_users_invite` (`invite`),
   KEY `idx_users_token` (`token`)

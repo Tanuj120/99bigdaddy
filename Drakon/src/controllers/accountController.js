@@ -31,6 +31,20 @@ const isNumber = (params) => {
 }
 
 const cleanPhoneNumber = (phone) => String(phone || '').replace(/\D/g, '');
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const isValidEmail = (email) => {
+    if (!email || email.length > 191) return false;
+
+    const atIndex = email.indexOf('@');
+    if (atIndex < 1 || atIndex > 64 || atIndex !== email.lastIndexOf('@')) return false;
+
+    const domain = email.slice(atIndex + 1);
+    return domain.length >= 3
+        && domain.includes('.')
+        && !domain.startsWith('.')
+        && !domain.endsWith('.')
+        && !/\s/.test(email);
+}
 const normalizeInviteCode = (code) => {
     const value = String(code || '').trim();
     if (!value) return '';
@@ -49,6 +63,7 @@ const normalizeInviteCode = (code) => {
     return value;
 }
 const tableColumnsCache = new Map();
+let registrationEmailSchemaPromise;
 
 const isInternationalPhoneNumber = (phone) => {
     return /^[1-9]\d{7,18}$/.test(phone);
@@ -83,6 +98,50 @@ const getTableColumns = async (tableName) => {
     } catch (error) {
         return null;
     }
+}
+
+const ensureRegistrationEmailSchema = async () => {
+    if (!registrationEmailSchemaPromise) {
+        registrationEmailSchemaPromise = (async () => {
+            let columns = await getTableColumns('users');
+
+            if (!columns?.has('email')) {
+                try {
+                    await connection.query(
+                        'ALTER TABLE `users` ADD COLUMN `email` VARCHAR(191) NULL DEFAULT NULL AFTER `phone`'
+                    );
+                } catch (error) {
+                    if (error?.code !== 'ER_DUP_FIELDNAME') throw error;
+                }
+
+                tableColumnsCache.delete('users');
+                columns = await getTableColumns('users');
+            }
+
+            if (!columns?.has('email')) {
+                throw new Error('User email storage is unavailable');
+            }
+
+            const [emailIndexes] = await connection.query(
+                "SHOW INDEX FROM `users` WHERE `Column_name` = 'email' AND `Non_unique` = 0"
+            );
+
+            if (!emailIndexes.length) {
+                try {
+                    await connection.query(
+                        'ALTER TABLE `users` ADD UNIQUE INDEX `uq_users_email` (`email`)'
+                    );
+                } catch (error) {
+                    if (error?.code !== 'ER_DUP_KEYNAME') throw error;
+                }
+            }
+        })().catch((error) => {
+            registrationEmailSchemaPromise = undefined;
+            throw error;
+        });
+    }
+
+    return registrationEmailSchemaPromise;
 }
 
 const pickExistingEntries = (columns, values) => {
@@ -168,6 +227,7 @@ const findUserByPhoneAndPassword = async (phone, passwordHash) => {
 const insertRegisteredUser = async ({
     id_user,
     username,
+    email,
     name_user,
     pwd,
     code,
@@ -180,6 +240,7 @@ const insertRegisteredUser = async ({
     const dynamicValues = {
         id_user,
         phone: username,
+        email,
         name_user,
         password: md5(pwd),
         plain_password: pwd,
@@ -209,28 +270,28 @@ const insertRegisteredUser = async ({
 
     const insertAttempts = [
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
-            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
+            params: [id_user, username, email, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0]
         },
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
-            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, 1, otp2, ip, 1, time]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, email, name_user, md5(pwd), pwd, 0, code, invitecode, 1, otp2, ip, 1, time]
         },
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
-            params: [id_user, username, name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, email, name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time]
         },
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
-            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,ctv = ?,veri = ?,ip_address = ?,status = ?,time = ?, free_bonus = ?, first_deposit = ?",
+            params: [id_user, username, email, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0]
         },
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
-            params: [id_user, username, name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, plain_password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, email, name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time]
         },
         {
-            sql: "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
-            params: [id_user, username, name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time]
+            sql: "INSERT INTO users SET id_user = ?,phone = ?,email = ?,name_user = ?,password = ?, money = ?,code = ?,invite = ?,veri = ?,ip_address = ?,status = ?,time = ?",
+            params: [id_user, username, email, name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time]
         }
     ];
 
@@ -250,6 +311,7 @@ const insertRegisteredUser = async ({
 
 const updateRegisteredUserDraft = async ({
     username,
+    email,
     name_user,
     pwd,
     code,
@@ -260,6 +322,7 @@ const updateRegisteredUserDraft = async ({
     time
 }) => {
     const dynamicValues = {
+        email,
         name_user,
         password: md5(pwd),
         plain_password: pwd,
@@ -286,28 +349,28 @@ const updateRegisteredUserDraft = async ({
 
     const updateAttempts = [
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ?, free_bonus = ?, first_deposit = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ?, free_bonus = ?, first_deposit = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, otp2, ip, 1, time, 500, 0, username]
         },
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), pwd, 0, code, invitecode, 1, otp2, ip, 1, time, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), pwd, 0, code, invitecode, 1, otp2, ip, 1, time, username]
         },
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), 0, code, invitecode, 1, otp2, ip, 1, time, username]
         },
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, ip_address = ?, status = ?, time = ?, free_bonus = ?, first_deposit = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, ip_address = ?, status = ?, time = ?, free_bonus = ?, first_deposit = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), pwd, 0, code, invitecode, ctv, 1, ip, 1, time, 500, 0, username]
         },
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, plain_password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), pwd, 0, code, invitecode, 1, ip, 1, time, username]
         },
         {
-            sql: "UPDATE users SET name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
-            params: [name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time, username]
+            sql: "UPDATE users SET email = ?, name_user = ?, password = ?, money = ?, code = ?, invite = ?, veri = ?, ip_address = ?, status = ?, time = ? WHERE phone = ?",
+            params: [email, name_user, md5(pwd), 0, code, invitecode, 1, ip, 1, time, username]
         }
     ];
 
@@ -506,8 +569,9 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
     let now = new Date().getTime();
-    let { username, pwd, invitecode } = req.body;
+    let { username, email, pwd, invitecode } = req.body;
     username = cleanPhoneNumber(username);
+    email = normalizeEmail(email);
     invitecode = normalizeInviteCode(invitecode);
     let id_user = randomNumber(10000, 99999);
     let otp2 = randomNumber(100000, 999999);
@@ -516,7 +580,7 @@ const register = async (req, res) => {
     let ip = ipAddress(req);
     let time = timeCreate();
 
-    if (!username || !pwd || !invitecode) {
+    if (!username || !email || !pwd || !invitecode) {
         return res.status(200).json({
             message: 'ERROR!!!',
             status: false
@@ -530,11 +594,27 @@ const register = async (req, res) => {
         });
     }
 
+    if (!isValidEmail(email)) {
+        return res.status(200).json({
+            message: 'Please enter a valid email address',
+            status: false
+        });
+    }
+
     try {
+        await ensureRegistrationEmailSchema();
         await ensureBootstrapInviteCode(invitecode);
         const [check_u] = await connection.query('SELECT * FROM users WHERE phone = ?', [username]);
+        const [check_e] = await connection.query('SELECT id, phone FROM users WHERE email = ? LIMIT 1', [email]);
         const [check_i] = await connection.query('SELECT * FROM users WHERE code = ? ', [invitecode]);
         const [check_ip] = await connection.query('SELECT * FROM users WHERE ip_address = ? ', [ip]);
+
+        if (check_e.length > 0 && String(check_e[0].phone || '') !== String(username || '')) {
+            return res.status(200).json({
+                message: 'Registered email address',
+                status: false
+            });
+        }
 
         if (check_u.length == 1 && check_u[0].veri == 1) {
             return res.status(200).json({
@@ -560,6 +640,7 @@ const register = async (req, res) => {
                 if (check_u.length >= 1) {
                     await updateRegisteredUserDraft({
                         username,
+                        email,
                         name_user,
                         pwd,
                         code,
@@ -573,6 +654,7 @@ const register = async (req, res) => {
                     await insertRegisteredUser({
                         id_user,
                         username,
+                        email,
                         name_user,
                         pwd,
                         code,
@@ -620,6 +702,12 @@ const register = async (req, res) => {
         }
     } catch (error) {
         if (error) console.log(error);
+        if (error?.code === 'ER_DUP_ENTRY' && /email|uq_users_email/i.test(error?.message || '')) {
+            return res.status(200).json({
+                message: 'Registered email address',
+                status: false
+            });
+        }
         return res.status(200).json({
             message: error?.message || 'Registration failed',
             status: false
@@ -779,47 +867,151 @@ const forGotPassword = async (req, res) => {
 }
 
 const keFuMenu = async (req, res) => {
-    let telegram = '';
+    return res.render("keFuMenu.ejs");
+}
+
+const changeEmailPage = async (req, res) => {
+    const auth = req.cookies.auth;
 
     try {
-        const auth = req.cookies.auth;
-        let user;
+        await ensureRegistrationEmailSchema();
+        const [rows] = await connection.query(
+            'SELECT `email` FROM `users` WHERE `token` = ? LIMIT 1',
+            [auth]
+        );
 
-        if (auth) {
-            const userColumns = await getTableColumns('users');
-            const selectedColumns = ['`level`'];
-            if (userColumns?.has('ctv')) selectedColumns.push('`ctv`');
-
-            const [users] = await connection.query(
-                `SELECT ${selectedColumns.join(', ')} FROM users WHERE token = ? LIMIT 1`,
-                [auth]
-            );
-            user = users[0];
+        if (!rows?.length) {
+            return res.redirect('/login');
         }
 
-        if (user && Number(user.level) === 0 && user.ctv) {
-            const [pointListRows] = await connection.query(
-                'SELECT `telegram` FROM point_list WHERE phone = ? LIMIT 1',
-                [user.ctv]
-            );
-            telegram = pointListRows[0]?.telegram || '';
-        }
-
-        if (!telegram) {
-            const [settings] = await connection.query('SELECT `telegram`, `cskh` FROM admin LIMIT 1');
-            telegram = settings[0]?.telegram || settings[0]?.cskh || '';
-        }
+        return res.render('member/changeEmail.ejs', {
+            currentEmail: normalizeEmail(rows[0].email),
+        });
     } catch (error) {
-        console.error('Customer service page load failed:', error);
-        try {
-            const [settings] = await connection.query('SELECT `telegram`, `cskh` FROM admin LIMIT 1');
-            telegram = settings[0]?.telegram || settings[0]?.cskh || '';
-        } catch (fallbackError) {
-            console.error('Customer service fallback failed:', fallbackError);
-        }
+        console.error('Change email page failed:', error);
+        return res.redirect('/myProfile');
+    }
+}
+
+const changeEmail = async (req, res) => {
+    const auth = req.cookies.auth;
+    const oldEmail = normalizeEmail(req.body.oldEmail);
+    const newEmail = normalizeEmail(req.body.newEmail);
+    const confirmEmail = normalizeEmail(req.body.confirmEmail);
+    const password = String(req.body.password || '');
+
+    if (!auth || !newEmail || !confirmEmail || !password) {
+        return res.status(200).json({
+            message: 'Please complete all required fields',
+            status: false,
+            timeStamp: Date.now(),
+        });
     }
 
-    return res.render("keFuMenu.ejs", { telegram });
+    if (!isValidEmail(newEmail)) {
+        return res.status(200).json({
+            message: 'Please enter a valid new email address',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
+
+    if (newEmail !== confirmEmail) {
+        return res.status(200).json({
+            message: 'New email addresses do not match',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
+
+    try {
+        await ensureRegistrationEmailSchema();
+        const [rows] = await connection.query(
+            'SELECT `id`, `email`, `password` FROM `users` WHERE `token` = ? LIMIT 1',
+            [auth]
+        );
+        const user = rows?.[0];
+
+        if (!user) {
+            return res.status(401).json({
+                message: 'Please log in again',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        const currentEmail = normalizeEmail(user.email);
+        if (currentEmail && oldEmail !== currentEmail) {
+            return res.status(200).json({
+                message: 'Old email address does not match',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        if (user.password !== md5(password)) {
+            return res.status(200).json({
+                message: 'Incorrect password',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        if (currentEmail === newEmail) {
+            return res.status(200).json({
+                message: 'Please enter a different email address',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        const [duplicateRows] = await connection.query(
+            'SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1',
+            [newEmail]
+        );
+        if (duplicateRows.some((row) => Number(row.id) !== Number(user.id))) {
+            return res.status(200).json({
+                message: 'This email address is already registered',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        const [updateResult] = await connection.execute(
+            'UPDATE `users` SET `email` = ? WHERE `id` = ? AND `token` = ? AND `password` = ?',
+            [newEmail, user.id, auth, user.password]
+        );
+
+        if (!updateResult?.affectedRows) {
+            return res.status(200).json({
+                message: 'Email update failed. Please try again',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Email address updated successfully',
+            status: true,
+            email: newEmail,
+            timeStamp: Date.now(),
+        });
+    } catch (error) {
+        if (error?.code === 'ER_DUP_ENTRY') {
+            return res.status(200).json({
+                message: 'This email address is already registered',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        console.error('Email update failed:', error);
+        return res.status(200).json({
+            message: 'Email update failed. Please try again',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
 }
 
 
@@ -832,5 +1024,7 @@ export default {
     verifyCode,
     verifyCodePass,
     forGotPassword,
-    keFuMenu
+    keFuMenu,
+    changeEmailPage,
+    changeEmail,
 }

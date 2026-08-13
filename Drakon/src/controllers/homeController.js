@@ -157,6 +157,8 @@ const toNumber = (...values) => {
     return 0;
 }
 
+const TRANSACTION_TIME_ZONE = process.env.APP_TIME_ZONE || 'Asia/Kolkata';
+
 const getTransactionTime = (...values) => {
     for (const value of values) {
         if (value === undefined || value === null || value === '') continue;
@@ -174,6 +176,7 @@ const getTransactionTime = (...values) => {
 const formatTransactionTime = (timestamp) => {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleString('en-IN', {
+        timeZone: TRANSACTION_TIME_ZONE,
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',

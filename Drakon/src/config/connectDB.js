@@ -76,6 +76,7 @@ const createMockConnection = () => {
       id: 1,
       id_user: "10001",
       phone: "1000000001",
+      email: null,
       name_user: "Admin",
       password: md5("admin123"),
       plain_password: "admin123",
@@ -103,6 +104,7 @@ const createMockConnection = () => {
       id: 2,
       id_user: "89721",
       phone: seededPhone,
+      email: null,
       name_user: "Member89721",
       password: md5(seededPassword),
       plain_password: seededPassword,
@@ -167,6 +169,9 @@ const createMockConnection = () => {
     } else if (/where\s+`?phone`?\s*=\s*\?/i.test(sql)) {
       const [phone] = params;
       rows = users.filter((user) => phoneMatches(user.phone, phone));
+    } else if (/where\s+`?email`?\s*=\s*\?/i.test(sql)) {
+      const [email] = params;
+      rows = users.filter((user) => String(user.email || "") === String(email || ""));
     } else if (/where\s+phone\s+like\s*\?/i.test(sql)) {
       const [phonePattern] = params;
       const prefix = String(phonePattern || "").replace(/%$/, "");
@@ -236,6 +241,26 @@ const createMockConnection = () => {
   };
 
   const updateUsers = (sql, params = []) => {
+    const simpleUpdate = sql.match(/^\s*update\s+`?users`?\s+set\s+(.+?)\s+where\s+`?phone`?\s*=\s*\?\s*$/i);
+    if (simpleUpdate) {
+      const assignments = simpleUpdate[1].split(",").map((assignment) => assignment.trim());
+      const fields = assignments.map((assignment) => {
+        const match = assignment.match(/^`?([a-z0-9_]+)`?\s*=\s*\?$/i);
+        return match?.[1];
+      });
+
+      if (fields.every(Boolean)) {
+        const phone = params[fields.length];
+        const user = users.find((entry) => phoneMatches(entry.phone, phone));
+        if (user) {
+          fields.forEach((field, index) => {
+            user[field] = params[index];
+          });
+        }
+        return [{ affectedRows: user ? 1 : 0 }, []];
+      }
+    }
+
     if (/set\s+`?token`?\s*=\s*\?\s+where\s+`?phone`?\s*=\s*\?/i.test(sql)) {
       const [token, phone] = params;
       const user = users.find((entry) => phoneMatches(entry.phone, phone));
@@ -246,6 +271,25 @@ const createMockConnection = () => {
       const [nameUser, token] = params;
       const user = users.find((entry) => entry.token === token);
       if (user) user.name_user = nameUser;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    if (/set\s+`?email`?\s*=\s*\?\s+where\s+`?id`?\s*=\s*\?\s+and\s+`?token`?\s*=\s*\?\s+and\s+`?password`?\s*=\s*\?/i.test(sql)) {
+      const [email, id, token, password] = params;
+      const duplicate = users.some((entry) => (
+        Number(entry.id) !== Number(id) &&
+        String(entry.email || '').toLowerCase() === String(email || '').toLowerCase()
+      ));
+      if (duplicate) {
+        const error = new Error("Duplicate entry for key 'uq_users_email'");
+        error.code = 'ER_DUP_ENTRY';
+        throw error;
+      }
+      const user = users.find((entry) => (
+        Number(entry.id) === Number(id) &&
+        entry.token === token &&
+        entry.password === password
+      ));
+      if (user) user.email = email;
       return [{ affectedRows: user ? 1 : 0 }, []];
     }
     if (/set\s+otp\s*=\s*\?,\s*password\s*=\s*\?\s+where\s+`?token`?\s*=\s*\?/i.test(sql)) {
@@ -394,6 +438,7 @@ const createMockConnection = () => {
       id: users.length + 1,
       id_user: values.id_user,
       phone: values.phone,
+      email: values.email ?? null,
       name_user: values.name_user,
       password: values.password,
       plain_password: values.plain_password,
@@ -502,10 +547,21 @@ const createMockConnection = () => {
     if (/information_schema\.columns/i.test(sql)) {
       return [[{ count: 1, DATA_TYPE: "varchar" }], []];
     }
+    if (/^\s*show\s+columns\s+from\s+`?users`?/i.test(sql)) {
+      return [[
+        'id', 'id_user', 'phone', 'email', 'name_user', 'password', 'plain_password',
+        'token', 'money', 'total_money', 'code', 'invite', 'ctv', 'veri', 'otp', 'ip',
+        'ip_address', 'status', 'time', 'time_otp', 'free_bonus', 'first_deposit',
+        'level', 'user_level', 'roses_f', 'roses_f1', 'roses_today', 'recharge'
+      ].map((Field) => ({ Field })), []];
+    }
+    if (/^\s*show\s+index\s+from\s+`?users`?/i.test(sql)) {
+      return [[{ Key_name: 'uq_users_email', Column_name: 'email', Non_unique: 0 }], []];
+    }
     if (/^\s*create\s+table/i.test(sql) || /^\s*alter\s+table/i.test(sql) || /^\s*delete\s+from/i.test(sql)) {
       return [{ affectedRows: 0 }, []];
     }
-    if (/^\s*select/i.test(sql) && /from\s+users/i.test(sql)) {
+    if (/^\s*select/i.test(sql) && /from\s+`?users`?/i.test(sql)) {
       return [selectUsers(sql, params), []];
     }
     if (/^\s*select/i.test(sql) && /from\s+referral_level_income/i.test(sql)) {
@@ -535,7 +591,7 @@ const createMockConnection = () => {
     if (/^\s*insert\s+ignore\s+into\s+referral_level_income/i.test(sql) || /^\s*insert\s+into\s+referral_level_income/i.test(sql)) {
       return insertReferralLevelIncome(params);
     }
-    if (/^\s*insert\s+into\s+users/i.test(sql)) {
+    if (/^\s*insert\s+into\s+`?users`?/i.test(sql)) {
       return insertUsers(sql, params);
     }
     if (/^\s*insert\s+into\s+point_list/i.test(sql)) {

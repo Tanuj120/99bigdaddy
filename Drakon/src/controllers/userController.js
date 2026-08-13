@@ -618,6 +618,7 @@ const userInfo = async (req, res) => {
                 id_user: others.id_user,
                 name_user: others.name_user,
                 phone_user: others.phone,
+                email_user: others.email || '',
                 money_user: others.money,
             },
             totalRecharge: formatMoney(totalRecharge),

@@ -53,6 +53,47 @@
         .totalSavingsIMG {
             width: 0.8rem
         }
+
+        .profile-entry {
+            top: .32rem;
+            min-height: 2.05rem;
+            padding: .22rem .28rem;
+            border: .02667rem solid rgba(38, 143, 232, .35);
+            border-radius: .32rem;
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 .12rem .36rem rgba(31, 91, 145, .18);
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .profile-entry:active {
+            transform: scale(.985);
+            box-shadow: 0 .06rem .2rem rgba(31, 91, 145, .15);
+        }
+
+        .profile-entry:focus-visible {
+            outline: .05333rem solid #278fe8;
+            outline-offset: .05333rem;
+        }
+
+        .profile-entry .profile.profile-cta {
+            position: static !important;
+            display: flex;
+            align-items: center;
+            gap: .12rem;
+            min-width: 1.82rem;
+            padding: .16rem .2rem;
+            border-radius: 99rem;
+            color: #147dca;
+            background: #e7f4ff;
+            font-size: .29rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .profile-entry .profile.profile-cta i {
+            color: #147dca !important;
+        }
     </style>
 </head>
 
@@ -76,8 +117,10 @@
             </div>
             <div data-v-8cd483ca="" class="menu-box">
                 <div data-v-8cd483ca="" class="info p-t-30 p-l-30 p-b-30 p-r-20" style="padding-top: 0rem!important">
-                    <div data-v-8cd483ca="" class="c-row c-row-between c-row-middle state-box c-pr"
-                        onclick="location.href='/myProfile'">
+                    <div data-v-8cd483ca="" class="c-row c-row-between c-row-middle state-box c-pr profile-entry"
+                        role="link" tabindex="0" aria-label="View profile"
+                        onclick="location.href='/myProfile'"
+                        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/myProfile'}">
                         <div data-v-8cd483ca="" class="c-row c-row-middle">
                             <div data-v-8cd483ca="" class="user-img">
                                 <img data-v-8cd483ca="" src="/images/avatar.svg" class="img">
@@ -88,7 +131,8 @@
                                 <div data-v-8cd483ca="" class="number mb3"> </div>
                             </div>
                         </div>
-                        <div data-v-8cd483ca="" class="profile">
+                        <div data-v-8cd483ca="" class="profile profile-cta">
+                            <span>View Profile</span>
                             <i data-v-8cd483ca="" class="fa-regular fa-angle-right fa-fade fa-lg center"
                                 style="color: #8f5206; font-size: 20px;">
                             </i>

@@ -68,6 +68,7 @@ const initWebRouter = (app) => {
     router.get('/about/riskAgreement', middlewareController, homeController.riskAgreement);
 
     router.get('/myProfile', middlewareController, homeController.myProfilePage);
+    router.get('/myProfile/email', middlewareController, accountController.changeEmailPage);
 
 
 
@@ -98,6 +99,7 @@ const initWebRouter = (app) => {
     router.get('/api/webapi/GetUserInfo', middlewareController, userController.userInfo); // get info account
     router.put('/api/webapi/change/userInfo', middlewareController, userController.changeUser); // get info account
     router.put('/api/webapi/change/pass', middlewareController, userController.changePassword); // get info account
+    router.put('/api/webapi/change/email', middlewareController, accountController.changeEmail);
 
     // bet wingo
     router.post('/api/webapi/action/join', middlewareController, winGoController.betWinGo); // register

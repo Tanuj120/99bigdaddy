@@ -51,6 +51,23 @@
             color: #959595
         }
 
+        .mian .profile .item.email-item[data-v-9f3a9836] {
+            cursor: pointer;
+            border-radius: .21333rem;
+            transition: background-color .15s ease;
+        }
+
+        .mian .profile .item.email-item[data-v-9f3a9836]:active {
+            background-color: #e7f4ff;
+        }
+
+        .email-item .email-value {
+            max-width: 6rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .mian .popup-box .title[data-v-9f3a9836] {
             height: 1.6rem;
             width: 100%;
@@ -130,6 +147,17 @@
                 <div data-v-9f3a9836="" class="item c-row c-row-between">
                     <div data-v-9f3a9836="" class="lab">Mobile Number</div>
                     <div data-v-9f3a9836="" class="number"> </div>
+                </div>
+                <div data-v-9f3a9836="" class="item email-item c-row c-row-between"
+                    role="link" tabindex="0" aria-label="Change email address"
+                    onclick="location.href='/myProfile/email'"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/myProfile/email'}">
+                    <div data-v-9f3a9836="" class="lab">Email Address</div>
+                    <div data-v-9f3a9836="" class="txt c-row c-row-middle-center">
+                        <span class="email email-value">Not set</span>
+                        <i data-v-9f3a9836="" class="m-l-10 van-icon van-icon-arrow"
+                            style="color: rgb(39, 143, 232); font-size: 16px;"></i>
+                    </div>
                 </div>
             </div>
             <!---->
@@ -214,6 +242,7 @@
                 $('.profile .name').text(data.data.name_user);
                 $('.profile .id').text(data.data.id_user);
                 $('.profile .number').text(formatDisplayPhone(data.data.phone_user));
+                $('.profile .email').text(data.data.email_user || 'Not set');
             });
     </script>
     <!---->

@@ -48,7 +48,12 @@ let inviterCode = 'BOOTSTRAP01';
 for (let index = 1; index <= 9; index++) {
     const phone = `15553000${String(index).padStart(3, '0')}`;
     const registration = await invoke(accountController.register, {
-        body: { username: phone, pwd: 'qwert', invitecode: inviterCode },
+        body: {
+            username: phone,
+            email: `copy-gaming-${index}@example.test`,
+            pwd: 'qwert',
+            invitecode: inviterCode,
+        },
         headers: { 'x-forwarded-for': `10.30.0.${index}` },
         connection: { remoteAddress: `10.30.0.${index}` },
         socket: { remoteAddress: `10.30.0.${index}` },
@@ -132,6 +137,18 @@ for (let level = 1; level <= 8; level++) {
     assert.equal(commissionEntries[0].status, 'Complete');
     assert.equal(commissionEntries[0].orderId, transactionId);
     assert.match(commissionEntries[0].description, new RegExp(`^${expectedPercentages[level - 1]}% from ${buyer.phone} on ₹1000\\.00$`));
+    assert.equal(
+        commissionEntries[0].time,
+        new Date(Number(ledger.created_at)).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        }),
+        `Level ${level} transaction time is not displayed in India time`
+    );
 
     const promotionHistory = await invoke(userController.listPromotionHistory, {
         cookies: { auth: recipient.token },

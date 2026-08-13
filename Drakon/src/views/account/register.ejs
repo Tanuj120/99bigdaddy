@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" translate="no" data-dpr="1" style="font-size: 40px;">
-password
 <head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="shortcut icon" href="/images/drakon-mark.svg" type="image/x-icon">
@@ -16,6 +15,19 @@ password
     <link rel="stylesheet" href="./index_files/page-login-ef3d1f88.css">
     <link rel="stylesheet" href="./index_files/page-main-ff2e7571.css">
     <link rel="stylesheet" href="./index_files/index-98687087.css">
+    <style>
+        .registration-email .passwordInput__container-input input {
+            padding-right: .34667rem;
+        }
+
+        .password-storage-reminder {
+            margin: .24rem .02667rem 0;
+            color: #172238;
+            font-size: .3rem;
+            line-height: .44rem;
+            white-space: normal;
+        }
+    </style>
 </head>
 
 <body style="font-size: 12px;">
@@ -242,6 +254,19 @@ password
                             </div>
                         </div>
                         <div data-v-23d378a6="" class="tip"></div>
+                        <div data-v-57d49070="" data-v-23d378a6=""
+                            class="passwordInput__container registration-email">
+                            <div data-v-57d49070="" class="passwordInput__container-label">
+                                <img data-v-57d49070="" class="passwordInput__container-label__icon"
+                                    src="./index_files/emailnumber-2c31d006.png" alt="">
+                                <span data-v-57d49070="">Email address</span>
+                            </div>
+                            <div data-v-57d49070="" class="passwordInput__container-input">
+                                <input data-v-57d49070="" name="email" id="email" type="email"
+                                    placeholder="Please enter your email address" maxlength="191"
+                                    autocomplete="email" inputmode="email" required>
+                            </div>
+                        </div>
                         <div data-v-57d49070="" data-v-23d378a6="" class="passwordInput__container">
                             <div data-v-57d49070="" class="passwordInput__container-label"><img data-v-57d49070=""
                                     class="passwordInput__container-label__icon"
@@ -286,6 +311,9 @@ password
                                 </div><span class="van-checkbox__label">I have read and agree <span
                                         data-v-23d378a6="">【Privacy Agreement】</span></span>
                             </div>
+                        </div>
+                        <div class="password-storage-reminder">
+                            <strong>System doesn't save password so make sure to remember password before registration.</strong>
                         </div>
 
                         <div data-v-23d378a6="" class="register__container-button" type="submit">
@@ -425,13 +453,18 @@ password
             }
         }
 
-        function validateForm(username, password, invite, checkbox, text) {
-            if (!username || !invite || !checkbox || !password) {
+        function validateForm(username, email, password, invite, text) {
+            if (!username || !email || !invite || !password) {
                 alertMess(text);
                 return false;
-            } else {
-                return true;
             }
+
+            if (!document.getElementById('email').checkValidity()) {
+                alertMess('Please enter a valid email address');
+                return false;
+            }
+
+            return true;
         }
 
         $('#logb').click(async (e) => {
@@ -458,11 +491,12 @@ password
         $('#submit').click(async (e) => {
             e.preventDefault();
             let username = window.buildInternationalPhone($('#username').val().trim());
+            let email = $('#email').val().trim().toLowerCase();
             // let otp = $('#otp').val().trim();
             let password = $('#password').val().trim();
             let invite = $('#invite').val().trim();
             //let checkbox = $('.van-checkbox__icon').hasClass('van-checkbox__icon--checked');
-            let status = validateForm(username, password, invite, 'Please fill in the required section');
+            let status = validateForm(username, email, password, invite, 'Please fill in the required section');
             if (status) {
                 $('.van-overlay').fadeIn(10);
                 $.ajax({
@@ -470,6 +504,7 @@ password
                     url: "/api/webapi/register",
                     data: {
                         username: username,
+                        email: email,
                         pwd: password,
                         invitecode: invite,
                         // otp: otp,
