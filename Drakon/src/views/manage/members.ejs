@@ -57,14 +57,14 @@
               <table class="table table-striped projects" id="table1">
                 <thead>
                   <tr>
-                    <th class="text-center">#</th>
+                    <th class="text-center">UID</th>
                     <th class="text-center">Account</th>
-                    <th class="text-center">Level</th>
                     <th class="text-center">Amount</th>
                     <th class="text-center">Code</th>
                     <th class="text-center">Referral</th>
                     <th class="text-center">Direct</th>
                     <th class="text-center">Status</th>
+                    <th class="text-center">Email</th>
                     <th class="text-center">Password</th>
                     <th class="text-center">Action</th>
                   </tr>
@@ -141,12 +141,6 @@
       return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
     };
 
-    const levelText = (level) => {
-      if (Number(level) === 1) return 'ADMIN';
-      if (Number(level) === 2) return 'CTV';
-      return 'USER';
-    };
-
     const renderMemberRows = (users, showDirectLink = true) => {
       let html = '';
       if (!Array.isArray(users) || users.length === 0) {
@@ -171,9 +165,6 @@
           <b style="color: #2003db">${user.phone}</b>
         </td>
         <td>
-          <b class="${(user.level == 1) ? 'text-danger' : ''}">${levelText(user.level)}</b>
-        </td>
-        <td>
           <b>${moneyText(user.money)}</b>
         </td>
         <td>
@@ -187,6 +178,9 @@
         </td>
         <td class="project-state">
           ${(user.status == 1) ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Banned</span>'}
+        </td>
+        <td>
+          <b>${escapeHtml(user.email || '-')}</b>
         </td>
         <td>
           <b style="color: #2003db">${user.plain_password}</b>
