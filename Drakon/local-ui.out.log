@@ -1,0 +1,12 @@
+[debug] configEngine paths {
+  viewsDir: 'C:\\Users\\tulsy\\Downloads\\Drakon\\Drakon\\src\\views',
+  publicDir: 'C:\\Users\\tulsy\\Downloads\\Drakon\\Drakon\\src\\public',
+  isVercel: false
+}
+[debug] server view path state {
+  __dirname: 'C:\\Users\\tulsy\\Downloads\\Drakon\\Drakon\\src',
+  viewsPath: 'C:\\Users\\tulsy\\Downloads\\Drakon\\Drakon\\src\\views',
+  publicPath: 'C:\\Users\\tulsy\\Downloads\\Drakon\\Drakon\\src\\public',
+  isVercel: false
+}
+Connected success port: 3016
