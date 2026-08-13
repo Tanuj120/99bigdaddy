@@ -15,6 +15,32 @@ body.account-refresh {
     background: var(--drakon-bg) !important;
 }
 
+body.account-refresh .account-icon-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+body.account-refresh .account-top-icon,
+body.account-refresh .account-menu-icon svg,
+body.account-refresh .account-chevron,
+body.account-refresh .account-logout-icon,
+body.account-refresh .balance-visibility-toggle svg {
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.9;
+}
+
+body.account-refresh .account-top-icon {
+    width: .64rem;
+    height: .64rem;
+    color: #fff;
+}
+
 body.account-refresh .mian.page,
 body.account-refresh .mian .menu-box {
     background: var(--drakon-bg) !important;
@@ -59,8 +85,16 @@ body.account-refresh .profile-entry .infoName .name {
 }
 
 body.account-refresh .profile-entry .infoName .id,
-body.account-refresh .profile-entry .infoName .number {
+body.account-refresh .profile-entry .infoName .number,
+body.account-refresh .profile-entry .infoName .email {
     color: var(--drakon-text) !important;
+}
+
+body.account-refresh .profile-entry .infoName .email {
+    overflow: hidden;
+    max-width: 5.3rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 body.account-refresh .profile-entry .profile.profile-cta {
@@ -70,6 +104,12 @@ body.account-refresh .profile-entry .profile.profile-cta {
 
 body.account-refresh .profile-entry .profile.profile-cta i {
     color: var(--drakon-blue) !important;
+}
+
+body.account-refresh .profile-entry .account-chevron {
+    width: .42rem;
+    height: .42rem;
+    color: var(--drakon-blue);
 }
 
 body.account-refresh .mian .menu-box .total-box {
@@ -96,6 +136,24 @@ body.account-refresh .mian .menu-box .total-box .infoBtn span {
 body.account-refresh .mian .menu-box .total-box .money .txt,
 body.account-refresh .mian .menu-box .total-box .money .txt1 {
     color: var(--drakon-blue) !important;
+}
+
+body.account-refresh .balance-visibility-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: .86rem;
+    height: .86rem;
+    margin: .18rem .24rem .18rem auto;
+    padding: 0;
+    border: 0;
+    color: var(--drakon-gold);
+    background: transparent;
+}
+
+body.account-refresh .balance-visibility-toggle svg {
+    width: .55rem;
+    height: .55rem;
 }
 
 body.account-refresh .mian .menu-box .total-box .infoBtn {
@@ -148,7 +206,7 @@ body.account-refresh .mian .list .item:last-child {
     border-bottom: 0 !important;
 }
 
-body.account-refresh .mian .list .item .c-row-middle:first-child > i {
+body.account-refresh .mian .list .item .account-menu-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -158,15 +216,22 @@ body.account-refresh .mian .list .item .c-row-middle:first-child > i {
     border-radius: .2rem;
     color: var(--drakon-blue) !important;
     background: #edf6ff;
-    --fa-primary-color: var(--drakon-blue) !important;
-    --fa-secondary-color: var(--drakon-blue) !important;
+    flex: 0 0 .72rem;
+}
+
+body.account-refresh .mian .list .item .account-menu-icon svg {
+    width: .48rem;
+    height: .48rem;
+    color: var(--drakon-blue);
 }
 
 body.account-refresh .mian .list .item .name {
     color: var(--drakon-text) !important;
 }
 
-body.account-refresh .mian .list .item .c-row-middle:last-child i {
+body.account-refresh .mian .list .item .account-chevron {
+    width: .44rem;
+    height: .44rem;
     color: var(--drakon-blue) !important;
 }
 
@@ -185,10 +250,10 @@ body.account-refresh .mian .logout-btn .logout {
     box-shadow: none !important;
 }
 
-body.account-refresh .mian .logout-btn .logout i {
+body.account-refresh .mian .logout-btn .account-logout-icon {
+    width: .48rem;
+    height: .48rem;
     color: var(--drakon-blue) !important;
-    --fa-primary-color: var(--drakon-blue) !important;
-    --fa-secondary-color: var(--drakon-blue) !important;
 }
 
 body.account-refresh .tabbar__container {
@@ -381,6 +446,12 @@ body.auth-register .register__container {
     padding-inline: .4rem !important;
 }
 
+body.auth-register .register__container > .tip:empty {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 body.auth-register .phoneInput__container,
 body.auth-register .registration-email,
 body.auth-register .passwordInput__container,
@@ -394,6 +465,14 @@ body.auth-register .register__container-invitation {
     border-radius: .3rem;
     background: #fff !important;
     box-shadow: var(--drakon-shadow);
+}
+
+body.auth-register .phoneInput__container,
+body.auth-register .registration-email {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
 }
 
 body.auth-register .phoneInput__container-label,

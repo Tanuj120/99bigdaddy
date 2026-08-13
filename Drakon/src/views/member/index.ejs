@@ -126,6 +126,46 @@
 </head>
 
 <body class="account-refresh">
+    <svg class="account-icon-sprite" aria-hidden="true">
+        <symbol id="account-icon-headset" viewBox="0 0 24 24">
+            <path d="M4 14v-2a8 8 0 0 1 16 0v2"></path>
+            <path d="M18 19c0 1.1-.9 2-2 2h-3"></path>
+            <rect x="3" y="13" width="4" height="7" rx="2"></rect>
+            <rect x="17" y="13" width="4" height="7" rx="2"></rect>
+        </symbol>
+        <symbol id="account-icon-chevron" viewBox="0 0 24 24">
+            <path d="m9 18 6-6-6-6"></path>
+        </symbol>
+        <symbol id="account-icon-users" viewBox="0 0 24 24">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </symbol>
+        <symbol id="account-icon-shield" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+            <path d="m9 12 2 2 4-4"></path>
+        </symbol>
+        <symbol id="account-icon-gift" viewBox="0 0 24 24">
+            <rect x="3" y="8" width="18" height="13" rx="2"></rect>
+            <path d="M12 8v13M3 12h18M7.5 8C5.5 8 5 6.8 5 5.8 5 4.8 5.8 4 6.8 4 9 4 12 8 12 8M16.5 8C18.5 8 19 6.8 19 5.8 19 4.8 18.2 4 17.2 4 15 4 12 8 12 8"></path>
+        </symbol>
+        <symbol id="account-icon-receipt" viewBox="0 0 24 24">
+            <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"></path>
+            <path d="M9 7h6M9 11h6M9 15h3"></path>
+        </symbol>
+        <symbol id="account-icon-whatsapp" viewBox="0 0 24 24">
+            <path d="M21 11.5a8.5 8.5 0 0 1-12.58 7.47L3 21l2.03-5.42A8.5 8.5 0 1 1 21 11.5Z"></path>
+            <path d="M8.4 8.2c.4 2.8 2.6 5 5.4 5.4l1.4-1.4c.3-.3.7-.4 1.1-.2l1.7.8"></path>
+        </symbol>
+        <symbol id="account-icon-eye" viewBox="0 0 24 24">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </symbol>
+        <symbol id="account-icon-logout" viewBox="0 0 24 24">
+            <path d="M10 17l5-5-5-5M15 12H3"></path>
+            <path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path>
+        </symbol>
+    </svg>
     <div id="app">
         <div data-v-8cd483ca="" class="mian page">
             <div data-v-106b99c8="" data-v-8cd483ca="" class="navbar">
@@ -137,7 +177,7 @@
                 </div>
                 <div data-v-106b99c8="" class="navbar-right" onclick="location.href='/keFuMenu'">
                     <div data-v-8cd483ca="" data-v-106b99c8="" class="c-row">
-                        <i class="fa-duotone fa-headset support-headset fa-lg center"></i>
+                        <svg class="account-top-icon support-headset" aria-hidden="true"><use href="#account-icon-headset"></use></svg>
                     </div>
                 </div>
             </div>
@@ -155,13 +195,12 @@
                                 <div data-v-8cd483ca="" class="name mb3 c-row c-row-middle"> </div>
                                 <div data-v-8cd483ca="" class="id tag-read mb3" data-clipboard-text="42472"></div>
                                 <div data-v-8cd483ca="" class="number mb3"> </div>
+                                <div data-v-8cd483ca="" class="email mb3" style="display: none;"></div>
                             </div>
                         </div>
                         <div data-v-8cd483ca="" class="profile profile-cta">
                             <span>View Profile</span>
-                            <i data-v-8cd483ca="" class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                style="color: #8f5206; font-size: 20px;">
-                            </i>
+                            <svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg>
                         </div>
                     </div>
                 </div>
@@ -175,17 +214,7 @@
                                     <div data-v-8cd483ca="" class="money">
                                         <div data-v-8cd483ca="">
                                             <span data-v-8cd483ca="" class="txt1" id="Balance"
-                                                style="display: inline; font-size: 22px"><i
-                                                    class="fa-solid fa-asterisk fa-fade fa-sm center"
-                                                    style="color: #D9AC4F;"></i> <i
-                                                    class="fa-solid fa-asterisk fa-fade fa-sm center"
-                                                    style="color: #D9AC4F;"></i> <i
-                                                    class="fa-solid fa-asterisk fa-fade fa-sm center"
-                                                    style="color: #D9AC4F;"></i> <i
-                                                    class="fa-solid fa-asterisk fa-fade fa-sm center"
-                                                    style="color: #D9AC4F;"></i> <i
-                                                    class="fa-solid fa-asterisk fa-fade fa-sm center"
-                                                    style="color: #D9AC4F;"></i></span>
+                                                style="display: inline; font-size: 22px">*****</span>
                                             <span data-v-8cd483ca="" class="txt" id="balance_show"
                                                 style="display: none">₹
                                                 0.00</span>
@@ -197,10 +226,10 @@
                                     </div>
                                 </div>
                             </div>
-                            <span toggle="#password-field"
-                                class="fa-duotone fa-eye fa-fade fa-lg center field_icon toggle-password"
-                                style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F; margin: 8px; align-self: end; margin-left: auto"
-                                onclick="toggleBalanceVisibility()"></span>
+                            <button type="button" class="balance-visibility-toggle" aria-label="Show or hide balance"
+                                onclick="toggleBalanceVisibility()">
+                                <svg aria-hidden="true"><use href="#account-icon-eye"></use></svg>
+                            </button>
                         </div>
                         <div data-v-8cd483ca="" class="c-row c-row-between m-t-10 infoBtn">
                             <div data-v-8cd483ca="" class="item c-row c-row-center" onclick="location.href='/wallet'">
@@ -238,77 +267,58 @@
                                 <div data-v-21f3500a="" class="item c-row c-row-between"
                                     onclick="location.href='/manager/index'">
                                     <div data-v-21f3500a="" class="c-row c-row-middle">
-                                        <i class="fa-duotone fa-user-tie fa-fade fa-lg center"
-                                            style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F;"></i>
+                                        <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-users"></use></svg></span>
                                         <span data-v-21f3500a="" class="name">Collaborator Area</span>
                                     </div>
                                     <div data-v-21f3500a="" class="c-row c-row-middle">
-                                        <i data-v-21f3500a="" class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                            style="color: rgb(166, 169, 174); font-size: 20px;">
-                                        </i>
+                                        <svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg>
                                     </div>
                                 </div>
                                 <% } %>
                                     <div data-v-21f3500a="" class="item c-row c-row-between"
                                         onclick="location.href='/mian/forgot'">
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i class="fa-duotone fa-shield-check fa-fade fa-lg center"
-                                                style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F;"></i>
+                                            <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-shield"></use></svg></span>
                                             <span data-v-21f3500a="" class="name">Security & Safety</span>
                                         </div>
-                                        <div data-v-21f3500a="" class="c-row c-row-middle"><i data-v-21f3500a=""
-                                                class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                                style="color: rgb(166, 169, 174); font-size: 20px;">
-                                            </i></div>
+                                        <div data-v-21f3500a="" class="c-row c-row-middle"><svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg></div>
                                     </div>
                                     <div data-v-21f3500a="" class="item c-row c-row-between"
                                         onclick="location.href='/redenvelopes'">
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i class="fa-duotone fa-gift fa-fade fa-lg center"
-                                                style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F;"></i>
+                                            <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-gift"></use></svg></span>
                                             <span data-v-21f3500a="" class="name">Redeem Code</span>
                                         </div>
-                                        <div data-v-21f3500a="" class="c-row c-row-middle"><i data-v-21f3500a=""
-                                                class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                                style="color: rgb(166, 169, 174); font-size: 20px;">
-                                            </i></div>
+                                        <div data-v-21f3500a="" class="c-row c-row-middle"><svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg></div>
                                     </div>
                                     <div data-v-21f3500a="" class="item c-row c-row-between"
                                         onclick="location.href='/recordsalary'">
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i class="fa-duotone fa-receipt fa-fade fa-lg center"
-                                                style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F;"></i>
+                                            <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-receipt"></use></svg></span>
                                             <span data-v-21f3500a="" class="name">Transaction Record</span>
                                         </div>
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i data-v-21f3500a="" class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                                style="color: rgb(166, 169, 174); font-size: 20px;">
-                                            </i>
+                                            <svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg>
                                         </div>
                                     </div>
                                     <div data-v-21f3500a="" class="item c-row c-row-between"
                                         onclick="location.href='<%=cskh%>'">
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i class="fab fa-whatsapp fa-lg center" style="color: #D9AC4F"></i>
+                                            <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-whatsapp"></use></svg></span>
                                             <span data-v-21f3500a="" class="name">Whatsapp Support</span>
                                         </div>
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i data-v-21f3500a="" class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                                style="color: rgb(166, 169, 174); font-size: 20px;">
-                                            </i>
+                                            <svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg>
                                         </div>
                                     </div>
                                     <div data-v-21f3500a="" class="item c-row c-row-between"
                                         onclick="location.href='/keFuMenu'">
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i class="fa-duotone fa-user-headset fa-fade fa-lg center"
-                                                style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F;"></i>
+                                            <span class="account-menu-icon"><svg aria-hidden="true"><use href="#account-icon-headset"></use></svg></span>
                                             <span data-v-21f3500a="" class="name">Customer Support Online 24/7</span>
                                         </div>
                                         <div data-v-21f3500a="" class="c-row c-row-middle">
-                                            <i data-v-21f3500a="" class="fa-regular fa-angle-right fa-fade fa-lg center"
-                                                style="color: rgb(166, 169, 174); font-size: 20px;">
-                                            </i>
+                                            <svg class="account-chevron" aria-hidden="true"><use href="#account-icon-chevron"></use></svg>
                                         </div>
                                     </div>
                 </div>
@@ -319,8 +329,7 @@
                     <button data-v-8cd483ca=""
                         class="logout van-button van-button--default van-button--normal van-button--block van-button--round"
                         style="display: -webkit-box;display: -webkit-flex;display: flex;-webkit-box-align: center;-webkit-align-items: center;align-items: center;-webkit-box-pack: center;-webkit-justify-content: center;justify-content: center;gap: 0.13333rem;width: 100%;height: 100%;padding-block: 0.13333rem;color: #d9ac4f;background: none;border: 0.01333rem solid #D9AC4F;border-radius: 0.53333rem;border-radius: 99rem;outline: none;font-size: .4rem;">
-                        <i class="fa-duotone fa-power-off fa-fade fa-lg center"
-                            style="--fa-primary-color: #D9AC4F; --fa-secondary-color: #D9AC4F; --fa-secondary-opacity: 0.5;"></i>
+                        <svg class="account-logout-icon" aria-hidden="true"><use href="#account-icon-logout"></use></svg>
                         <div data-v-8cd483ca="" class="van-button__content">
                             <span data-v-8cd483ca="" class="van-button__text">
                                 <span data-v-8cd483ca="">Log-Out</span>
@@ -418,6 +427,11 @@
                 $('.infoName .id').text(`UID:${data.data.id_user}`);
                 $('.infoName .id').attr('data-clipboard-text', '');
                 $('.infoName .number').text(`Mobile Number: ${maskPhoneNumber(data.data.phone_user)}`);
+                const registeredEmail = String(data.data.email_user || '').trim();
+                $('.infoName .email')
+                    .text(`Email: ${registeredEmail}`)
+                    .attr('title', registeredEmail)
+                    .toggle(Boolean(registeredEmail));
                 setAccountBalance(data.data.money_user);
                 setTimeout(() => setAccountBalance(data.data.money_user), 0);
                 $('.money .txt').text(` ₹ ${data.data.money_user} `);
