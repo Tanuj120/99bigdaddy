@@ -292,6 +292,25 @@ const createMockConnection = () => {
       if (user) user.email = email;
       return [{ affectedRows: user ? 1 : 0 }, []];
     }
+    if (/set\s+`?email`?\s*=\s*\?\s+where\s+`?id`?\s*=\s*\?\s+and\s+`?token`?\s*=\s*\?\s+and\s+\(`?email`?\s+is\s+null\s+or\s+trim\(`?email`?\)\s*=\s*''\)/i.test(sql)) {
+      const [email, id, token] = params;
+      const duplicate = users.some((entry) => (
+        Number(entry.id) !== Number(id) &&
+        String(entry.email || '').toLowerCase() === String(email || '').toLowerCase()
+      ));
+      if (duplicate) {
+        const error = new Error("Duplicate entry for key 'uq_users_email'");
+        error.code = 'ER_DUP_ENTRY';
+        throw error;
+      }
+      const user = users.find((entry) => (
+        Number(entry.id) === Number(id) &&
+        entry.token === token &&
+        !String(entry.email || '').trim()
+      ));
+      if (user) user.email = email;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
     if (/set\s+otp\s*=\s*\?,\s*password\s*=\s*\?\s+where\s+`?token`?\s*=\s*\?/i.test(sql)) {
       const [otp, password, token] = params;
       const user = users.find((entry) => entry.token === token);

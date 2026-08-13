@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html translate="no" data-dpr="1" style="font-size: 37.52px;">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="robots" content="noindex,nofollow">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <title>Register Email - Drakon</title>
+    <link href="/css/member/main.css" rel="stylesheet">
+    <link href="/css/home/app.css" rel="stylesheet">
+    <link rel="shortcut icon" href="/images/drakon-mark.svg" type="image/x-icon">
+    <style>
+        html,
+        body {
+            min-height: 100%;
+            width: 100%;
+            margin: 0;
+            background: #e8f5ff;
+        }
+
+        .email-page {
+            min-height: 100vh;
+            padding-bottom: .8rem;
+            background: #e8f5ff;
+        }
+
+        .email-card {
+            margin: .55rem .4rem;
+            padding: .5rem .4rem .6rem;
+            border: .02667rem solid #c7e3f8;
+            border-radius: .4rem;
+            background: #fff;
+            box-shadow: 0 .16rem .5rem rgba(31, 91, 145, .12);
+        }
+
+        .email-card h1 {
+            margin: 0 0 .12rem;
+            color: #142a3d;
+            font-size: .53rem;
+        }
+
+        .subtitle {
+            margin-bottom: .45rem;
+            color: #6d8194;
+            font-size: .34rem;
+            line-height: 1.5;
+        }
+
+        .field {
+            margin-bottom: .38rem;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: .14rem;
+            color: #243746;
+            font-size: .35rem;
+            font-weight: 700;
+        }
+
+        .field input {
+            width: 100%;
+            height: 1.15rem;
+            padding: 0 .34rem;
+            border: .02667rem solid #bdd8eb;
+            border-radius: .24rem;
+            background: #f9fcff;
+            color: #172b3a;
+            font-size: .38rem;
+            box-sizing: border-box;
+        }
+
+        .field input:focus {
+            border-color: #278fe8;
+            box-shadow: 0 0 0 .08rem rgba(39, 143, 232, .14);
+        }
+
+        .submit-button {
+            width: 100%;
+            height: 1.18rem;
+            margin-top: .12rem;
+            border: 0;
+            border-radius: 99rem;
+            color: #fff;
+            background: linear-gradient(90deg, #278fe8, #50b9f4);
+            box-shadow: 0 .14rem .34rem rgba(39, 143, 232, .28);
+            font-size: .42rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .submit-button:disabled {
+            opacity: .65;
+            cursor: wait;
+        }
+
+        .form-message {
+            display: none;
+            margin: 0 0 .35rem;
+            padding: .25rem .3rem;
+            border-radius: .2rem;
+            font-size: .34rem;
+            line-height: 1.45;
+        }
+
+        .form-message.error {
+            display: block;
+            color: #a82929;
+            background: #ffeded;
+        }
+
+        .form-message.success {
+            display: block;
+            color: #176b37;
+            background: #e9f9ef;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="mian email-page" data-v-9f3a9836="">
+        <div class="navbar" data-v-106b99c8="">
+            <div class="navbar-left" data-v-106b99c8="" onclick="location.href='/myProfile'">
+                <div class="bank c-row c-row-middle-center" data-v-106b99c8="">
+                    <img src="/images/back.c3244ab0.png" class="navbar-back" alt="Back" data-v-106b99c8="">
+                </div>
+            </div>
+            <div class="navbar-title" data-v-106b99c8="">Register Email</div>
+            <div class="navbar-right" data-v-106b99c8=""></div>
+        </div>
+
+        <section class="email-card">
+            <h1>Register Your Email</h1>
+            <p class="subtitle">Add an email address to your existing Drakon account.</p>
+            <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+
+            <form id="setupEmailForm" autocomplete="off" novalidate>
+                <div class="field">
+                    <label for="email">Enter Your Email</label>
+                    <input id="email" name="account_setup_email" type="email" maxlength="191"
+                        placeholder="Enter your email address" autocomplete="off" inputmode="email"
+                        autocapitalize="none" spellcheck="false" data-lpignore="true" data-1p-ignore required>
+                </div>
+                <div class="field">
+                    <label for="confirmEmail">Confirm Your Email</label>
+                    <input id="confirmEmail" name="account_setup_email_confirmation" type="email" maxlength="191"
+                        placeholder="Re-enter your email address" autocomplete="off" inputmode="email"
+                        autocapitalize="none" spellcheck="false" data-lpignore="true" data-1p-ignore required>
+                </div>
+                <button id="submitButton" class="submit-button" type="submit">Submit</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById('setupEmailForm');
+        const submitButton = document.getElementById('submitButton');
+        const messageBox = document.getElementById('formMessage');
+        const emailInput = document.getElementById('email');
+        const confirmEmailInput = document.getElementById('confirmEmail');
+
+        function clearPhoneAutofill() {
+            [emailInput, confirmEmailInput].forEach((input) => {
+                if (/^\+?[\d\s()-]{8,}$/.test(input.value.trim())) input.value = '';
+            });
+        }
+
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `form-message ${type}`;
+        }
+
+        clearPhoneAutofill();
+        window.addEventListener('pageshow', clearPhoneAutofill);
+        [50, 250, 750].forEach((delay) => setTimeout(clearPhoneAutofill, delay));
+        emailInput.addEventListener('focus', clearPhoneAutofill);
+        confirmEmailInput.addEventListener('focus', clearPhoneAutofill);
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const email = emailInput.value.trim().toLowerCase();
+            const confirmEmail = confirmEmailInput.value.trim().toLowerCase();
+
+            if (!email || !confirmEmail) {
+                showMessage('Please enter and confirm your email address', 'error');
+                return;
+            }
+
+            if (email !== confirmEmail) {
+                showMessage('Email addresses do not match', 'error');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Saving...';
+
+            try {
+                const response = await fetch('/api/webapi/set/email', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, confirmEmail }),
+                });
+                const data = await response.json();
+                showMessage(data.message || 'Unable to register email address', data.status ? 'success' : 'error');
+
+                if (data.status) {
+                    setTimeout(() => location.href = '/myProfile', 900);
+                } else if (data.redirect) {
+                    setTimeout(() => location.href = data.redirect, 900);
+                }
+            } catch (error) {
+                showMessage('Unable to register email address. Please try again', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 import connection from "../config/connectDB.js";
 import { calculateRemainingUsageAmount } from "../utils/withdrawalTurnover.js";
+import { isValidInrDepositAmount } from "../utils/depositValidation.js";
 import jwt from 'jsonwebtoken'
 import md5 from "md5";
 import request from 'request';
@@ -12,8 +13,6 @@ const FIXED_DEPOSIT_PLANS = [
     { days: 90, dailyRate: 1.11, levelPercentages: [5, 3, 2, 1, 1, 1, 1, 1] },
 ];
 const COPY_GAMING_AMOUNT_STEP = 100;
-const MINIMUM_DEPOSIT_AMOUNT = 100;
-const DEPOSIT_AMOUNT_STEP = 100;
 const MINIMUM_WITHDRAW_AMOUNT = 999;
 const MAXIMUM_WITHDRAW_AMOUNT = 999999;
 const DAY_IN_MS = 86400000;
@@ -1545,13 +1544,11 @@ const recharge = async (req, res) => {
     let type = req.body.type;
     let typeid = req.body.typeid;
 
-    const minimumMoney = MINIMUM_DEPOSIT_AMOUNT
-
     if (type != 'cancel') {
         const depositAmount = Number(money);
-        if (!auth || !Number.isFinite(depositAmount) || depositAmount < minimumMoney || !Number.isInteger(depositAmount / DEPOSIT_AMOUNT_STEP)) {
+        if (!auth || !isValidInrDepositAmount(depositAmount)) {
             return res.status(200).json({
-                message: 'Deposit amount must be 100 or above and in multiples of 100',
+                message: 'Deposit amount must be ₹100 or above',
                 status: false,
                 timeStamp: timeNow,
             })

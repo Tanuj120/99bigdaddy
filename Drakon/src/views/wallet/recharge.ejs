@@ -213,7 +213,7 @@
                                 <div data-v-67caa467="" class="input van-cell van-field">
                                     <div class="van-cell__value van-cell__value--alone van-field__value">
                                         <div class="van-field__body">
-                                            <input type="text" id="money_amount_input" value="1" inputmode="numeric"
+                                            <input type="text" id="money_amount_input" value="1" inputmode="decimal"
                                                 name="amount" placeholder="Enter USDT amount"
                                                 class="van-field__control">
                                         </div>
@@ -225,7 +225,7 @@
                                 <div data-v-67caa467="" class="input van-cell van-field">
                                     <div class="van-cell__value van-cell__value--alone van-field__value">
                                         <div class="van-field__body">
-                                            <input type="text" id="money_amount_inr_input" value="100" inputmode="numeric"
+                                            <input type="text" id="money_amount_inr_input" value="100" inputmode="decimal"
                                                 name="amount_inr" placeholder="INR equivalent"
                                                 class="van-field__control">
                                         </div>
@@ -322,7 +322,7 @@
 
         const USDT_TO_INR_RATE = 100
         const MINIMUM_USDT_AMOUNT = 1
-        const DEPOSIT_INR_STEP = 100
+        const MINIMUM_INR_AMOUNT = 100
         let inputMoney = MINIMUM_USDT_AMOUNT
 
         const sanitizeAmount = (value) => String(value || '').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
@@ -441,8 +441,8 @@
         const handleDepositFund = (event) => {
             event.preventDefault()
             const inrAmount = usdtToInr(inputMoney)
-            if (!inputMoney || inputMoney < MINIMUM_USDT_AMOUNT || !Number.isInteger(inrAmount / DEPOSIT_INR_STEP)) {
-                alertMessage(`Deposit must be at least ₹100 and in multiples of ₹100 (whole USDT amounts).`)
+            if (!inputMoney || inputMoney < MINIMUM_USDT_AMOUNT || inrAmount < MINIMUM_INR_AMOUNT) {
+                alertMessage(`Deposit must be at least ₹100. Any amount of ₹100 or above is allowed.`)
                 return
             }
 

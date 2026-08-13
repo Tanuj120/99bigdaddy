@@ -99,6 +99,7 @@ const initWebRouter = (app) => {
     router.get('/api/webapi/GetUserInfo', middlewareController, userController.userInfo); // get info account
     router.put('/api/webapi/change/userInfo', middlewareController, userController.changeUser); // get info account
     router.put('/api/webapi/change/pass', middlewareController, userController.changePassword); // get info account
+    router.put('/api/webapi/set/email', middlewareController, accountController.setInitialEmail);
     router.put('/api/webapi/change/email', middlewareController, accountController.changeEmail);
 
     // bet wingo

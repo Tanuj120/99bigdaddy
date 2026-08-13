@@ -4,13 +4,17 @@ import moment from "moment";
 import crypto from "crypto";
 import querystring from "querystring"
 import QRCode from 'qrcode'
+import {
+    MINIMUM_DEPOSIT_AMOUNT,
+    MINIMUM_USD_DEPOSIT_AMOUNT,
+    USDT_TO_INR_RATE,
+    convertUsdtToInr,
+    isValidInrDepositAmount,
+    isValidUsdtDepositAmount,
+    normalizeUsdtAmount,
+} from "../utils/depositValidation.js";
 
 let timeNow = Date.now();
-const MINIMUM_DEPOSIT_AMOUNT = 100;
-const DEPOSIT_AMOUNT_STEP = 100;
-const MINIMUM_USD_DEPOSIT_AMOUNT = 1;
-const USDT_TO_INR_RATE = 100;
-const USDT_DECIMAL_PLACES = 8;
 const MAX_TRANSACTION_HASH_LENGTH = 191;
 const DEFAULT_USDT_WALLET_ADDRESS = "0xB2e20EB91866CDDEAa588f3cAec76835c442445d";
 const DEFAULT_USDT_QR_CODE_URL = "/index_files/qr.jpeg";
@@ -19,30 +23,6 @@ let rechargeHashSchemaReady = false;
 const normalizeTransactionHash = (hash) => {
     const value = String(hash || "").trim();
     return /^0x[a-fA-F0-9]{64}$/.test(value) ? value.toLowerCase() : value;
-}
-
-const normalizeUsdtAmount = (value) => {
-    const amount = Number(value);
-    return Number.isFinite(amount)
-        ? Number(amount.toFixed(USDT_DECIMAL_PLACES))
-        : 0;
-}
-
-const convertUsdtToInr = (value) => {
-    return Number((normalizeUsdtAmount(value) * USDT_TO_INR_RATE).toFixed(2));
-}
-
-const isValidInrDepositAmount = (value) => {
-    const amount = Number(value);
-    return Number.isFinite(amount)
-        && amount >= MINIMUM_DEPOSIT_AMOUNT
-        && Number.isInteger(amount / DEPOSIT_AMOUNT_STEP);
-}
-
-const isValidUsdtDepositAmount = (value) => {
-    const amount = normalizeUsdtAmount(value);
-    return amount >= MINIMUM_USD_DEPOSIT_AMOUNT
-        && isValidInrDepositAmount(convertUsdtToInr(amount));
 }
 
 const isValidTransactionHash = (hash) => {
@@ -171,7 +151,7 @@ const addManualUPIPaymentRequest = async (req, res) => {
 
         if (!isValidInrDepositAmount(money)) {
             return res.status(400).json({
-                message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
+                message: `Deposit amount must be ₹${minimumMoneyAllowed} or above`,
                 status: false,
                 timeStamp: timeNow,
             })
@@ -254,7 +234,7 @@ const addManualUSDTPaymentRequest = async (req, res) => {
 
         if (!isValidUsdtDepositAmount(money_usdt)) {
             return res.status(400).json({
-                message: `Deposit amount must be $${minimumMoneyAllowed} or above in whole USDT amounts`,
+                message: `Deposit amount must be $${minimumMoneyAllowed} or above`,
                 status: false,
                 timeStamp: timeNow,
             })
@@ -424,7 +404,7 @@ const initiateUPIPayment = async (req, res) => {
 
     if (!isValidInrDepositAmount(money)) {
         return res.status(400).json({
-            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
+            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above`,
             status: false,
             timeStamp: timeNow,
         });
@@ -623,7 +603,7 @@ const initiateWowPayPayment = async (req, res) => {
 
     if (!isValidInrDepositAmount(money)) {
         return res.status(400).json({
-            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above and in multiples of ₹${DEPOSIT_AMOUNT_STEP}`,
+            message: `Deposit amount must be ₹${minimumMoneyAllowed} or above`,
             status: false,
             timeStamp: timeNow,
         })

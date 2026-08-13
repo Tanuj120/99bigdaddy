@@ -884,12 +884,118 @@ const changeEmailPage = async (req, res) => {
             return res.redirect('/login');
         }
 
-        return res.render('member/changeEmail.ejs', {
-            currentEmail: normalizeEmail(rows[0].email),
-        });
+        const currentEmail = normalizeEmail(rows[0].email);
+        if (!currentEmail) {
+            return res.render('member/setupEmail.ejs');
+        }
+
+        return res.render('member/changeEmail.ejs', { currentEmail });
     } catch (error) {
         console.error('Change email page failed:', error);
         return res.redirect('/myProfile');
+    }
+}
+
+const setInitialEmail = async (req, res) => {
+    const auth = req.cookies.auth;
+    const email = normalizeEmail(req.body.email);
+    const confirmEmail = normalizeEmail(req.body.confirmEmail);
+
+    if (!auth || !email || !confirmEmail) {
+        return res.status(200).json({
+            message: 'Please enter and confirm your email address',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
+
+    if (!isValidEmail(email)) {
+        return res.status(200).json({
+            message: 'Please enter a valid email address',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
+
+    if (email !== confirmEmail) {
+        return res.status(200).json({
+            message: 'Email addresses do not match',
+            status: false,
+            timeStamp: Date.now(),
+        });
+    }
+
+    try {
+        await ensureRegistrationEmailSchema();
+        const [rows] = await connection.query(
+            'SELECT `id`, `email` FROM `users` WHERE `token` = ? LIMIT 1',
+            [auth]
+        );
+        const user = rows?.[0];
+
+        if (!user) {
+            return res.status(401).json({
+                message: 'Please log in again',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        if (normalizeEmail(user.email)) {
+            return res.status(200).json({
+                message: 'Your email is already registered. Use Change Email instead',
+                status: false,
+                redirect: '/myProfile/email',
+                timeStamp: Date.now(),
+            });
+        }
+
+        const [duplicateRows] = await connection.query(
+            'SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1',
+            [email]
+        );
+        if (duplicateRows.length) {
+            return res.status(200).json({
+                message: 'This email address is already registered',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        const [updateResult] = await connection.execute(
+            "UPDATE `users` SET `email` = ? WHERE `id` = ? AND `token` = ? AND (`email` IS NULL OR TRIM(`email`) = '')",
+            [email, user.id, auth]
+        );
+
+        if (!updateResult?.affectedRows) {
+            return res.status(200).json({
+                message: 'Email setup could not be completed. Please refresh and try again',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Email address registered successfully',
+            status: true,
+            email,
+            timeStamp: Date.now(),
+        });
+    } catch (error) {
+        if (error?.code === 'ER_DUP_ENTRY') {
+            return res.status(200).json({
+                message: 'This email address is already registered',
+                status: false,
+                timeStamp: Date.now(),
+            });
+        }
+
+        console.error('Initial email setup failed:', error);
+        return res.status(200).json({
+            message: 'Email setup failed. Please try again',
+            status: false,
+            timeStamp: Date.now(),
+        });
     }
 }
 
@@ -1026,5 +1132,6 @@ export default {
     forGotPassword,
     keFuMenu,
     changeEmailPage,
+    setInitialEmail,
     changeEmail,
 }
