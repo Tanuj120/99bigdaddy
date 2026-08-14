@@ -3549,38 +3549,35 @@
             >
               <div data-v-f0612e6a="" class="lottery_container-tab"></div>
               <div data-v-f0612e6a="" class="lottery_container-list">
-                <div data-v-f0612e6a="" class="lotterySlotItem">
+                <div data-v-f0612e6a="" class="lotterySlotItem" role="button" tabindex="0" onclick="openControlledGame('/win')" onkeydown="openControlledGameFromKeyboard(event, '/win')">
                   <div data-v-f0612e6a="" class="lotterySlotItem_img">
                     <img
                       data-v-f0612e6a=""
                       class=""
                       data-origin="https://ossimg.bdgadminbdg.com/IndiaBDG/lotterycategory/lotterycategory_20240110062051do1k.png"
                       src="./index_files/lotterycategory_20240110062051do1k.png"
-                      onclick="return false;"
                     />
                   </div>
                   <span data-v-f0612e6a="">Win Go</span>
                 </div>
-                <div data-v-f0612e6a="" class="lotterySlotItem">
+                <div data-v-f0612e6a="" class="lotterySlotItem" role="button" tabindex="0" onclick="openControlledGame('/5d')" onkeydown="openControlledGameFromKeyboard(event, '/5d')">
                   <div data-v-f0612e6a="" class="lotterySlotItem_img">
                     <img
                       data-v-f0612e6a=""
                       class=""
                       data-origin="https://ossimg.bdgadminbdg.com/IndiaBDG/lotterycategory/lotterycategory_20240110062118e9kt.png"
                       src="./index_files/lotterycategory_20240110062118e9kt.png"
-                      onclick="return false;"
                     />
                   </div>
                   <span data-v-f0612e6a="">5D</span>
                 </div>
-                <div data-v-f0612e6a="" class="lotterySlotItem">
+                <div data-v-f0612e6a="" class="lotterySlotItem" role="button" tabindex="0" onclick="openControlledGame('/k3')" onkeydown="openControlledGameFromKeyboard(event, '/k3')">
                   <div data-v-f0612e6a="" class="lotterySlotItem_img">
                     <img
                       data-v-f0612e6a=""
                       class=""
                       data-origin="https://ossimg.bdgadminbdg.com/IndiaBDG/lotterycategory/lotterycategory_20240110062111bt8e.png"
                       src="./index_files/lotterycategory_20240110062111bt8e.png"
-                      onclick="return false;"
                     />
                   </div>
                   <span data-v-f0612e6a="">K3</span>
@@ -4430,6 +4427,29 @@
     </script>
 
     <script>
+      async function openControlledGame(gameUrl) {
+        try {
+          const response = await fetch('/api/webapi/games/status', {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+          });
+          const result = await response.json();
+          if (response.ok && result.status === true && result.enabled === true) {
+            window.location.href = gameUrl;
+          }
+        } catch (error) {
+          console.error('Unable to check game status:', error);
+        }
+      }
+
+      function openControlledGameFromKeyboard(event, gameUrl) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openControlledGame(gameUrl);
+        }
+      }
+
       const closeButton = document.getElementById("closeButton");
       const popUp = document.getElementById("containerWrapper");
       closeButton.addEventListener("click", function () {

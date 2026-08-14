@@ -9,6 +9,7 @@ import dailyController from '../controllers/dailyController.js';
 import k5Controller from '../controllers/k5Controller.js';
 import k3Controller from '../controllers/k3Controller.js';
 import paymentController from '../controllers/paymentController.js';
+import gameAccessController from '../controllers/gameAccessController.js';
 
 let router = express.Router();
 
@@ -73,21 +74,21 @@ const initWebRouter = (app) => {
 
 
     // BET wingo
-    router.get('/win', middlewareController, winGoController.winGoPage);
-    router.get('/win/3', middlewareController, winGoController.winGoPage3);
-    router.get('/win/5', middlewareController, winGoController.winGoPage5);
-    router.get('/win/10', middlewareController, winGoController.winGoPage10);
+    router.get('/win', middlewareController, gameAccessController.requireEnabledPage, winGoController.winGoPage);
+    router.get('/win/3', middlewareController, gameAccessController.requireEnabledPage, winGoController.winGoPage3);
+    router.get('/win/5', middlewareController, gameAccessController.requireEnabledPage, winGoController.winGoPage5);
+    router.get('/win/10', middlewareController, gameAccessController.requireEnabledPage, winGoController.winGoPage10);
 
     // BET K5D
-    router.get('/5d', middlewareController, k5Controller.K5DPage);
-    router.post('/api/webapi/action/5d/join', middlewareController, k5Controller.betK5D); // register
+    router.get('/5d', middlewareController, gameAccessController.requireEnabledPage, k5Controller.K5DPage);
+    router.post('/api/webapi/action/5d/join', middlewareController, gameAccessController.requireEnabledBet, k5Controller.betK5D); // register
     router.post('/api/webapi/5d/GetNoaverageEmerdList', middlewareController, k5Controller.listOrderOld); // register
     router.post('/api/webapi/5d/GetMyEmerdList', middlewareController, k5Controller.GetMyEmerdList); // register
 
     // BET K3
-    router.get('/k3', middlewareController, k3Controller.K3Page);
+    router.get('/k3', middlewareController, gameAccessController.requireEnabledPage, k3Controller.K3Page);
 
-    router.post('/api/webapi/action/k3/join', middlewareController, k3Controller.betK3); // register
+    router.post('/api/webapi/action/k3/join', middlewareController, gameAccessController.requireEnabledBet, k3Controller.betK3); // register
     router.post('/api/webapi/k3/GetNoaverageEmerdList', middlewareController, k3Controller.listOrderOld); // register
     router.post('/api/webapi/k3/GetMyEmerdList', middlewareController, k3Controller.GetMyEmerdList); // register
 
@@ -103,7 +104,8 @@ const initWebRouter = (app) => {
     router.put('/api/webapi/change/email', middlewareController, accountController.changeEmail);
 
     // bet wingo
-    router.post('/api/webapi/action/join', middlewareController, winGoController.betWinGo); // register
+    router.get('/api/webapi/games/status', gameAccessController.status);
+    router.post('/api/webapi/action/join', middlewareController, gameAccessController.requireEnabledBet, winGoController.betWinGo); // register
     router.post('/api/webapi/GetNoaverageEmerdList', middlewareController, winGoController.listOrderOld); // register
     router.post('/api/webapi/GetMyEmerdList', middlewareController, winGoController.GetMyEmerdList); // register
 
@@ -239,6 +241,7 @@ const initWebRouter = (app) => {
     router.post('/api/webapi/admin/totalJoin', adminController.middlewareAdminController, adminController.totalJoin); // get info account
     router.post('/api/webapi/admin/change', adminController.middlewareAdminController, adminController.changeAdmin); // get info account
     router.post('/api/webapi/admin/profileUser', adminController.middlewareAdminController, adminController.profileUser); // get info account
+    router.post('/api/webapi/admin/games/status', adminController.middlewareAdminController, gameAccessController.updateStatus);
 
     // admin 5d 
     router.post('/api/webapi/admin/5d/listOrders', adminController.middlewareAdminController, adminController.listOrderOld); // get info account
