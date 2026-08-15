@@ -559,6 +559,16 @@
             return new Date(Number(value)).toLocaleDateString() + ' ' + new Date(Number(value)).toLocaleTimeString();
         }
 
+        function formatTransactionReference(item) {
+            const createdAt = new Date(Number(item.startTime || 0));
+            const hasValidDate = !Number.isNaN(createdAt.getTime());
+            const datePart = hasValidDate
+                ? `${createdAt.getFullYear()}${String(createdAt.getMonth() + 1).padStart(2, '0')}${String(createdAt.getDate()).padStart(2, '0')}`
+                : '00000000';
+            const recordPart = String(Math.max(0, Number(item.id) || 0)).padStart(10, '0');
+            return `${datePart}${recordPart}`;
+        }
+
         function notify(message) {
             window.alert(message);
         }
@@ -628,7 +638,7 @@
                             <span class="value">${formatMoney(item.maturityAmount)}</span>
                         </div>
                         <div class="record-footer">
-                            <span>${String(item.id).padStart(10, '0')}</span>
+                            <span>${formatTransactionReference(item)}</span>
                             <span>${formatDate(item.maturityTime)}</span>
                         </div>
                         ${action}
